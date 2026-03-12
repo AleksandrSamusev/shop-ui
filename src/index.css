@@ -1,21 +1,20 @@
 @import "tailwindcss";
 
-/* index.css */
-
-/* Target the browser's internal autofill styling */
 input:-webkit-autofill,
 input:-webkit-autofill:hover, 
 input:-webkit-autofill:focus, 
 input:-webkit-autofill:active {
-    /* 1. Use an inset box-shadow to fill the background with your Slate-950/900 color */
     -webkit-box-shadow: 0 0 0 1000px #0f172a inset !important;
-    
-    /* 2. Force the text color back to white */
     -webkit-text-fill-color: white !important;
     
-    /* 3. Ensure the font matches your UI */
-    font-family: inherit !important;
+    /* FIX: Solid White Cursor for maximum visibility */
+    caret-color: #ffffff !important; 
     
-    /* 4. Smooth out the transition if the browser tries to flicker */
+    font-family: inherit !important;
     transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Ensure all inputs in Veloce have the same high-contrast cursor */
+input, textarea, select {
+    caret-color: #ffffff !important;
 }
