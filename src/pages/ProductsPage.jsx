@@ -5,6 +5,21 @@ export default function ProductsPage() {
   const [productsPage, setProductsPage] = useState({ content: [], totalElements: 0 });
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalSkus: 0,
+    lowStockCount: 0,
+    totalValue: 0,
+    topSeller: "N/A",
+  });
+
+  const loadStats = async () => {
+    try {
+      const data = await productService.getInventoryStats();
+      setStats(data);
+    } catch (err) {
+      console.error("[ProductsPage] Failed to fetch stats:", err.message);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -21,23 +36,33 @@ export default function ProductsPage() {
     }
   };
 
-  // RAPTOR DEBOUNCE: Trigger search 400ms after typing stops
+  // 1. The Dashboard Refresher
+  const refreshDashboard = async () => {
+    // Fire both requests in parallel for maximum "Veloce" speed
+    try {
+      await Promise.all([fetchProducts(), loadStats()]);
+    } catch (err) {
+      console.error("[ProductsPage] Refresh failed:", err.message);
+    }
+  };
+
+  // 2. THE RAPTOR DEBOUNCE
   useEffect(() => {
-    const timer = setTimeout(fetchProducts, 400);
+    const timer = setTimeout(refreshDashboard, 400);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery]); // Re-runs when you type
 
   if (loading) {
     return (
-        <div className="h-full w-full bg-slate-950 flex flex-col items-center justify-center space-y-4">
-            {/* Veloce Blue Spinner */}
-            <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] animate-pulse">
-                Igniting the Forge...
-            </p>
-        </div>
+      <div className="h-full w-full bg-slate-950 flex flex-col items-center justify-center space-y-4">
+        {/* Veloce Blue Spinner */}
+        <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
+        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] animate-pulse">
+          Igniting the Forge...
+        </p>
+      </div>
     );
-}
+  }
 
   return (
     <div className="flex flex-col h-full bg-slate-950 overflow-hidden">
@@ -72,15 +97,55 @@ export default function ProductsPage() {
       {/* 2. THE HIGH-DENSITY WORKSPACE */}
       <main className="flex-1 overflow-y-auto p-12 bg-slate-950">
         <div className="max-w-[1400px] space-y-10">
-          {/* INVENTORY METRICS ROW */}
+          {/* INVENTORY METRICS COMMAND CENTER */}
           <div className="grid grid-cols-4 gap-4">
-            <div className="bg-slate-900/40 border border-slate-800/60 p-5 rounded-3xl">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+            {/* Total SKUs */}
+            <div className="bg-slate-900/40 border border-slate-800/60 p-5 rounded-3xl backdrop-blur-sm">
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
                 Total SKUs
               </p>
-              <p className="text-3xl font-black text-white italic">{productsPage.totalElements}</p>
+              <p className="text-3xl font-black text-white italic tracking-tighter">
+                {stats.totalSkus}
+              </p>
             </div>
-            {/* ... more metrics (Stock Value, etc.) */}
+
+            {/* Stock Value */}
+            <div className="bg-slate-900/40 border border-slate-800/60 p-5 rounded-3xl backdrop-blur-sm">
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                Stock Value
+              </p>
+              <p className="text-3xl font-black text-blue-400 italic tracking-tighter">
+                ${stats.totalValue?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+
+            {/* Low Stock Alert (The Raptor Eye) */}
+            <div
+              className={`p-5 rounded-3xl border transition-all duration-700 shadow-2xl ${
+                stats.lowStockCount > 0
+                  ? "bg-amber-500/10 border-amber-500/40 shadow-amber-900/20"
+                  : "bg-slate-900/40 border-slate-800/60"
+              }`}
+            >
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                Low Stock
+              </p>
+              <p
+                className={`text-3xl font-black italic tracking-tighter ${stats.lowStockCount > 0 ? "text-amber-500 animate-pulse" : "text-white"}`}
+              >
+                {stats.lowStockCount}
+              </p>
+            </div>
+
+            {/* Top Seller */}
+            <div className="bg-slate-900/40 border border-slate-800/60 p-5 rounded-3xl backdrop-blur-sm">
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                Top Item
+              </p>
+              <p className="text-lg font-black text-white italic truncate mt-1 tracking-tight">
+                {stats.topSeller}
+              </p>
+            </div>
           </div>
 
           {/* PRODUCT MATRIX (3-Column Grid) */}
