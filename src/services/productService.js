@@ -10,4 +10,11 @@ export const productService = {
     const response = await api.get("/products/stats");
     return response.data.data;
   },
+  deleteProduct: async (id) => {
+    await api.delete(`/products/${id}`);
+  },
+      createProduct: async (productData) => {
+        const response = await api.post('/products', productData);
+        return response.data.data;
+    },
 };

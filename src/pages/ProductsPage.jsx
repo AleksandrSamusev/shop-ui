@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { productService } from "../services/productService";
+import DeleteModal from "../components/DeleteModal";
+import AddProductModal from "../components/AddProductModal";
 
 export default function ProductsPage() {
   const [productsPage, setProductsPage] = useState({ content: [], totalElements: 0 });
@@ -11,6 +13,46 @@ export default function ProductsPage() {
     totalValue: 0,
     topSeller: "N/A",
   });
+  const [deleteTarget, setDeleteTarget] = useState(null); // Stores { id, name }
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const closeAll = () => setOpenMenuId(null);
+    window.addEventListener("click", closeAll);
+    return () => window.removeEventListener("click", closeAll);
+  }, []);
+
+  // 2. The "Open Modal" Trigger (Replaces your old handleDelete)
+  const triggerDelete = (product) => {
+    setDeleteTarget({ id: product.id, name: product.name });
+  };
+
+  // 3. The "Execute Purge" Logic (The actual API call)
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    try {
+      await productService.deleteProduct(deleteTarget.id);
+
+      // 1. OPTIMISTIC UI: Remove the card from the local state
+      setProductsPage((prev) => ({
+        ...prev,
+        content: prev.content.filter((p) => p.id !== deleteTarget.id),
+        totalElements: prev.totalElements - 1,
+      }));
+
+      // 2. REFRESH STATS
+      loadStats();
+
+      // 3. CLOSE MODAL
+      setDeleteTarget(null);
+    } catch (err) {
+      console.error("[ProductsPage] Purge failed:", err.message);
+      setDeleteTarget(null); // Close on error too
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -64,6 +106,45 @@ export default function ProductsPage() {
     );
   }
 
+  const handleCreateProduct = async (formData) => {
+    setIsSaving(true);
+    try {
+      // THE CLEAN DATA PUSH: No 'status' included!
+      const cleanData = {
+        name: formData.name,
+        sku: formData.sku.toUpperCase().trim(),
+        category: formData.category,
+        manufacturer: formData.manufacturer || "Veloce Forge",
+
+        // Numbers must be cast to satisfy @Digits and @Min constraints
+        price: parseFloat(formData.price) || 0,
+        costPrice: parseFloat(formData.costPrice) || 0,
+        quantityInStock: parseInt(formData.quantityInStock) || 0,
+        lowStockThreshold: parseInt(formData.lowStockThreshold) || 10,
+
+        imageUrl: formData.imageUrl,
+        attributes: formData.attributes,
+
+        // Audit Data (Matches @NotBlank in your DTO)
+        currencyCode: "USD",
+        createdBy: "admin",
+      };
+
+      await productService.createProduct(cleanData);
+
+      // SUCCESS: Close modal and refresh the 1400px high-density grid
+      await refreshDashboard();
+      setIsAdding(false);
+    } catch (err) {
+      // Log the specific backend @Validation messages on your 27" monitor
+      const errors = err.response?.data?.errors;
+      console.error("Forge failed:", errors || err.message);
+      alert(errors ? errors.join("\n") : "Check the form data for errors.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-slate-950 overflow-hidden">
       {/* 1. COMMAND BAR (Search & Actions) */}
@@ -88,7 +169,10 @@ export default function ProductsPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-black uppercase tracking-tighter shadow-lg active:scale-95 transition-all">
+          <button
+            onClick={() => setIsAdding(true)}
+            className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide shadow-lg active:scale-95 transition-all"
+          >
             + Add Product
           </button>
         </div>
@@ -99,7 +183,6 @@ export default function ProductsPage() {
         <div className="max-w-[1400px] space-y-10">
           {/* INVENTORY METRICS COMMAND CENTER */}
           <div className="grid grid-cols-4 gap-4">
-            {/* Total SKUs */}
             <div className="bg-slate-900/40 border border-slate-800/60 p-5 rounded-3xl backdrop-blur-sm">
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
                 Total SKUs
@@ -109,7 +192,6 @@ export default function ProductsPage() {
               </p>
             </div>
 
-            {/* Stock Value */}
             <div className="bg-slate-900/40 border border-slate-800/60 p-5 rounded-3xl backdrop-blur-sm">
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
                 Stock Value
@@ -119,7 +201,6 @@ export default function ProductsPage() {
               </p>
             </div>
 
-            {/* Low Stock Alert (The Raptor Eye) */}
             <div
               className={`p-5 rounded-3xl border transition-all duration-700 shadow-2xl ${
                 stats.lowStockCount > 0
@@ -137,7 +218,6 @@ export default function ProductsPage() {
               </p>
             </div>
 
-            {/* Top Seller */}
             <div className="bg-slate-900/40 border border-slate-800/60 p-5 rounded-3xl backdrop-blur-sm">
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
                 Top Item
@@ -148,73 +228,161 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          {/* PRODUCT MATRIX (3-Column Grid) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {productsPage.content.map((product) => (
-              <div
-                key={product.id}
-                className="bg-slate-900/50 border border-slate-800 p-6 rounded-[2rem] hover:border-blue-500/30 transition-all group relative overflow-hidden"
-              >
-                {/* BASE64 IMAGE CONTAINER */}
-                <div className="h-48 mb-6 bg-slate-950 rounded-2xl overflow-hidden border border-slate-800/50 flex items-center justify-center">
-                  {product.imageUrl ? (
-                    <img
-                      src={product.imageUrl}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                  ) : (
-                    <span className="text-[10px] font-bold text-slate-700 uppercase">No Image</span>
-                  )}
-                </div>
-
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-[9px] font-mono bg-slate-950 px-2 py-1 rounded-lg text-slate-500 border border-slate-800">
-                    {product.sku}
-                  </span>
-                  <span
-                    className={`text-[9px] font-black px-2 py-1 rounded-lg uppercase ${
-                      product.status === "IN_STOCK"
-                        ? "bg-emerald-500/10 text-emerald-400"
-                        : "bg-red-500/10 text-red-400"
-                    }`}
+          {/* 🚀 CONDITIONAL RENDER: GRID OR EMPTY STATE */}
+          <div className="mt-10">
+            {productsPage.content && productsPage.content.length > 0 ? (
+              /* CASE A: SHOW THE PRODUCT MATRIX */
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {productsPage.content.map((product) => (
+                  <div
+                    key={product.id}
+                    className="bg-slate-900/50 border border-slate-800 p-6 rounded-[2rem] hover:border-blue-500/30 transition-all group relative overflow-hidden"
                   >
-                    {product.status}
-                  </span>
-                </div>
-
-                <h3 className="text-lg font-black text-white italic truncate mb-4">
-                  {product.name}
-                </h3>
-
-                {/* TECH SPECS (JSON ATTRIBUTES) */}
-                <div className="space-y-1 mb-6">
-                  {Object.entries(product.attributes || {}).map(([key, value]) => (
-                    <div key={key} className="flex justify-between text-[10px]">
-                      <span className="text-slate-500 uppercase font-bold">{key}:</span>
-                      <span className="text-slate-300 font-medium">{value.toString()}</span>
+                    <div className="h-48 mb-6 bg-slate-950 rounded-2xl overflow-hidden border border-slate-800/50 flex items-center justify-center">
+                      {product.imageUrl ? (
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                      ) : (
+                        <span className="text-[10px] font-bold text-slate-700 uppercase">
+                          No Image
+                        </span>
+                      )}
                     </div>
-                  ))}
-                </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-slate-800/50">
-                  <p className="text-2xl font-black text-white italic">${product.price}</p>
-                  <button className="p-2 text-slate-500 hover:text-white transition-colors">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                      />
-                    </svg>
-                  </button>
-                </div>
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[9px] font-mono bg-slate-950 px-2 py-1 rounded-lg text-slate-500 border border-slate-800">
+                        {product.sku}
+                      </span>
+                      <span
+                        className={`text-[9px] font-black px-2 py-1 rounded-lg uppercase ${product.status === "IN_STOCK" ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}
+                      >
+                        {product.status}
+                      </span>
+                    </div>
+
+                    <h3 className="text-lg font-black text-white italic truncate mb-4">
+                      {product.name}
+                    </h3>
+
+                    {/* TECH SPECS (Expanded to 3 rows) */}
+                    <div className="space-y-1 mb-6 h-16 overflow-hidden">
+                      {" "}
+                      {/* Increased h-12 to h-16 */}
+                      {product.attributes && Object.entries(product.attributes).length > 0 ? (
+                        Object.entries(product.attributes)
+                          .slice(0, 3) // 🚀 Changed from 2 to 3 to show Switch, Layout, and Sensor
+                          .map(([key, value]) => (
+                            <div key={key} className="flex justify-between text-[10px]">
+                              <span className="text-slate-500 uppercase font-black tracking-tighter">
+                                {key}:
+                              </span>
+                              <span className="text-slate-300 font-medium truncate ml-4">
+                                {value?.toString() || "N/A"}
+                              </span>
+                            </div>
+                          ))
+                      ) : (
+                        <div className="text-[10px] text-slate-700 italic">
+                          Standard Specification
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-800/50">
+                      <p className="text-2xl font-black text-white italic">${product.price}</p>
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(openMenuId === product.id ? null : product.id);
+                          }}
+                          className={`p-2 rounded-lg transition-colors ${openMenuId === product.id ? "bg-slate-800 text-white" : "text-slate-500 hover:text-white"}`}
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                            />
+                          </svg>
+                        </button>
+                        {openMenuId === product.id && (
+                          <div className="absolute right-0 bottom-full mb-2 w-36 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden animate-in slide-in-from-bottom-2 duration-200">
+                            <button className="w-full px-4 py-2 text-left text-[10px] font-bold text-slate-400 hover:bg-slate-800 hover:text-white transition-colors uppercase tracking-widest">
+                              Edit Details
+                            </button>
+                            <button
+                              onClick={() => triggerDelete(product)}
+                              className="w-full px-4 py-2 text-left text-[10px] font-bold text-red-500 hover:bg-red-500/10 transition-colors uppercase tracking-widest border-t border-slate-800/50"
+                            >
+                              Delete SKU
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              /* CASE B: SHOW THE ENTERPRISE EMPTY STATE */
+              <div className="flex flex-col items-center justify-center py-32 border-2 border-dashed border-slate-800/50 rounded-[3rem] bg-slate-900/10 animate-in fade-in zoom-in-95 duration-700">
+                <div className="w-20 h-20 bg-blue-500/5 rounded-3xl flex items-center justify-center mb-8 border border-blue-500/10">
+                  <svg
+                    className="w-10 h-10 text-slate-700"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.5"
+                      d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-white italic uppercase tracking-normal mb-2">
+                  Inventory Catalog Empty
+                </h3>
+                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em] mb-8 text-center max-w-xs leading-relaxed">
+                  There are no products currently listed.
+                  <br /> Add your first item to begin managing your stock.
+                </p>
+                <button
+                  onClick={() => setIsAdding(true)}
+                  className="group flex items-center gap-3 bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-900/20 transition-all active:scale-95"
+                >
+                  <span className="text-lg">+</span>Create New Product
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </main>
+
+      {/* OVERLAYS */}
+      <DeleteModal
+        isOpen={!!deleteTarget}
+        itemName={deleteTarget?.name}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
+      <AddProductModal
+        isOpen={isAdding}
+        onCancel={() => setIsAdding(false)}
+        onSave={handleCreateProduct}
+        isSaving={isSaving}
+      />
     </div>
   );
 }
