@@ -1,25 +1,87 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+// 1. GLOBAL CONFIGURATION (Moved outside to prevent re-renders)
+const FORGE_CONFIG = {
+  MAX_ATTRIBUTES: 20,
+  MIN_ATTRIBUTES: 1,
+  VISIBLE_ON_CARD: 3,
+  NAME_MAX_LENGTH: 150,
+  DEFAULT_CATEGORY: "Keyboards",
+  DEFAULT_MANUFACTURER: "Veloce Forge",
+  CATEGORIES: ["Keyboards", "Mice", "Audio", "Desk Aesthetics"],
+};
 
 export default function AddProductModal({ isOpen, onCancel, onSave, isSaving }) {
+  // 2. STATE
   const [formData, setFormData] = useState({
     sku: "",
     name: "",
-    category: "Keyboards",
-    manufacturer: "Veloce Forge",
+    category: FORGE_CONFIG.DEFAULT_CATEGORY,
+    manufacturer: FORGE_CONFIG.DEFAULT_MANUFACTURER,
     price: "",
     costPrice: "",
     quantityInStock: "",
     lowStockThreshold: 10,
     imageUrl: "",
-    attributes: { switch: "", layout: "", sensor: "" },
+    attributes: {},
   });
 
-  if (!isOpen) return null;
+  const [attributeRows, setAttributeRows] = useState([]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      // 1. Reset the core form data
+      setFormData({
+        sku: "",
+        name: "",
+        category: FORGE_CONFIG.DEFAULT_CATEGORY,
+        manufacturer: FORGE_CONFIG.DEFAULT_MANUFACTURER,
+        price: "",
+        costPrice: "",
+        quantityInStock: "",
+        lowStockThreshold: 10,
+        imageUrl: "",
+        attributes: {},
+      });
+
+      // 2. Reset the dynamic attribute rows
+      setAttributeRows([]);
+    }
+  }, [isOpen]); // Triggers every time the modal opens or closes
+
+  // 3. LOGIC HANDLERS
+  const handleAddAttribute = () => {
+    // FIXED: Changed PRODUCT_LIMITS to FORGE_CONFIG
+    if (attributeRows.length < FORGE_CONFIG.MAX_ATTRIBUTES) {
+      setAttributeRows((prev) => [...prev, { key: "", value: "" }]);
+    } else {
+      console.warn(`[Forge] Maximum limit of ${FORGE_CONFIG.MAX_ATTRIBUTES} attributes reached.`);
+    }
+  };
+
+  const updateAttributeRow = (index, field, val) => {
+    const updated = [...attributeRows];
+    updated[index][field] = val;
+    setAttributeRows(updated);
+  };
+
+  const removeAttributeRow = (index) => {
+    setAttributeRows(attributeRows.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(formData);
+
+    const attributesMap = attributeRows.reduce((acc, row) => {
+      const key = row.key.trim();
+      if (key) acc[key] = row.value.trim();
+      return acc;
+    }, {});
+
+    onSave({ ...formData, attributes: attributesMap });
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -75,12 +137,13 @@ export default function AddProductModal({ isOpen, onCancel, onSave, isSaving }) 
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-sm text-white focus:border-blue-500 outline-none appearance-none"
+                  className="..."
                 >
-                  <option>Keyboards</option>
-                  <option>Mice</option>
-                  <option>Audio</option>
-                  <option>Desk Aesthetics</option>
+                  {FORGE_CONFIG.CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -110,6 +173,12 @@ export default function AddProductModal({ isOpen, onCancel, onSave, isSaving }) 
                   step="0.01"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  onBlur={(e) => {
+                    if (e.target.value) {
+                      const formatted = parseFloat(e.target.value).toFixed(2);
+                      setFormData({ ...formData, price: formatted });
+                    }
+                  }}
                   className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-sm text-white focus:border-blue-500 outline-none"
                   placeholder="0.00"
                 />
@@ -124,6 +193,12 @@ export default function AddProductModal({ isOpen, onCancel, onSave, isSaving }) 
                   step="0.01"
                   value={formData.costPrice}
                   onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
+                  onBlur={(e) => {
+                    if (e.target.value) {
+                      const formatted = parseFloat(e.target.value).toFixed(2);
+                      setFormData({ ...formData, costPrice: formatted });
+                    }
+                  }}
                   className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-sm text-white focus:border-blue-500 outline-none"
                   placeholder="0.00"
                 />
@@ -157,42 +232,72 @@ export default function AddProductModal({ isOpen, onCancel, onSave, isSaving }) 
               </div>
             </div>
 
-            {/* UPGRADED TECHNICAL ATTRIBUTES (3-Column Grid) */}
-            <div className="p-6 bg-slate-950/50 border border-slate-800 rounded-[2rem] space-y-4">
-              <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-2 italic">
-                Technical Specifications (JSON)
-              </p>
-              <div className="grid grid-cols-3 gap-4">
-                <input
-                  placeholder="Switch"
-                  className="bg-transparent border-b border-slate-800 text-[10px] text-white p-1 outline-none focus:border-blue-500 transition-colors"
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      attributes: { ...formData.attributes, switch: e.target.value },
-                    })
-                  }
-                />
-                <input
-                  placeholder="Layout"
-                  className="bg-transparent border-b border-slate-800 text-[10px] text-white p-1 outline-none focus:border-blue-500 transition-colors"
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      attributes: { ...formData.attributes, layout: e.target.value },
-                    })
-                  }
-                />
-                <input
-                  placeholder="Sensor"
-                  className="bg-transparent border-b border-slate-800 text-[10px] text-white p-1 outline-none focus:border-blue-500 transition-colors"
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      attributes: { ...formData.attributes, sensor: e.target.value },
-                    })
-                  }
-                />
+            {/* TECHNICAL SPECIFICATIONS SECTION */}
+            <div className="space-y-2">
+              {/* Label and Add Button - Now outside the container */}
+              <div className="flex justify-between items-center px-1">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  Technical Specifications
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAddAttribute}
+                  className="text-[10px] font-black text-blue-400 hover:text-white uppercase transition-colors tracking-widest"
+                >
+                  + Add Spec
+                </button>
+              </div>
+
+              {/* Specification Container - Matched background, radius, and height */}
+              <div className="p-6 bg-slate-950 border border-slate-800 rounded-2xl h-[120px] overflow-y-auto custom-scrollbar">
+                {attributeRows.length === 0 ? (
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-[10px] text-slate-700 italic uppercase tracking-widest">
+                      No custom attributes defined
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {attributeRows.map((row, index) => (
+                      <div
+                        key={index}
+                        className="grid grid-cols-[1fr_1.5fr_auto] gap-3 items-center group animate-in slide-in-from-left-2"
+                      >
+                        <input
+                          placeholder="Key (e.g. DPI)"
+                          value={row.key}
+                          onChange={(e) => updateAttributeRow(index, "key", e.target.value)}
+                          className="bg-transparent border-b border-slate-800 text-[10px] text-slate-400 p-1 outline-none focus:border-blue-500 transition-colors"
+                        />
+                        <input
+                          placeholder="Value"
+                          value={row.value}
+                          onChange={(e) => updateAttributeRow(index, "value", e.target.value)}
+                          className="bg-transparent border-b border-slate-800 text-[10px] text-white p-1 outline-none focus:border-blue-500 transition-colors"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeAttributeRow(index)}
+                          className="text-slate-600 hover:text-red-500 transition-colors p-1"
+                        >
+                          <svg
+                            className="w-3 h-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

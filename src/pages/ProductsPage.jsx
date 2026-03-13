@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { productService } from "../services/productService";
 import DeleteModal from "../components/DeleteModal";
 import AddProductModal from "../components/AddProductModal";
+import ProductDetailsDrawer from "../components/ProductDetailsDrawer";
 
 export default function ProductsPage() {
   const [productsPage, setProductsPage] = useState({ content: [], totalElements: 0 });
@@ -17,6 +18,7 @@ export default function ProductsPage() {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [viewingProduct, setViewingProduct] = useState(null);
 
   useEffect(() => {
     const closeAll = () => setOpenMenuId(null);
@@ -236,44 +238,65 @@ export default function ProductsPage() {
                 {productsPage.content.map((product) => (
                   <div
                     key={product.id}
-                    className="bg-slate-900/50 border border-slate-800 p-6 rounded-[2rem] hover:border-blue-500/30 transition-all group relative overflow-hidden"
+                    className="bg-slate-900/50 border border-slate-800 p-6 rounded-[2rem] hover:border-blue-500/30 transition-all group relative overflow-hidden flex flex-col"
                   >
-                    <div className="h-48 mb-6 bg-slate-950 rounded-2xl overflow-hidden border border-slate-800/50 flex items-center justify-center">
+                    {/* 🚀 IMAGE SECTION: Single layer, high-intent hit area */}
+                    <div
+                      onClick={() => setViewingProduct(product)}
+                      className="relative h-48 -mx-6 -mt-6 mb-6 bg-white overflow-hidden cursor-pointer group/img border-b border-slate-800/50"
+                      /* 💡 Note: -mx-6 and -mt-6 pull the image to the very edges of the card */
+                    >
                       {product.imageUrl ? (
                         <img
                           src={product.imageUrl}
                           alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          className="w-full h-full object-cover group-hover/img:scale-110 transition-all duration-700"
                         />
                       ) : (
-                        <span className="text-[10px] font-bold text-slate-700 uppercase">
-                          No Image
-                        </span>
+                        <div className="w-full h-full bg-slate-950 flex items-center justify-center">
+                          <span className="text-[10px] font-black text-slate-800 uppercase italic tracking-widest">
+                            No Visual Data
+                          </span>
+                        </div>
                       )}
+
+                      {/* Visual Hint Overlay */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 bg-slate-950/40 backdrop-blur-[2px]">
+                        <div className="bg-blue-600/90 text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-xl shadow-2xl">
+                          View Specs
+                        </div>
+                      </div>
                     </div>
 
+                    {/* METADATA HEADER */}
                     <div className="flex justify-between items-start mb-2">
-                      <span className="text-[9px] font-mono bg-slate-950 px-2 py-1 rounded-lg text-slate-500 border border-slate-800">
+                      <span className="text-[9px] font-mono bg-slate-950 px-2 py-1 rounded-lg text-slate-500 border border-slate-800 uppercase">
                         {product.sku}
                       </span>
                       <span
-                        className={`text-[9px] font-black px-2 py-1 rounded-lg uppercase ${product.status === "IN_STOCK" ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}
+                        className={`text-[9px] font-black px-2 py-1 rounded-lg uppercase ${
+                          product.status === "IN_STOCK"
+                            ? "bg-emerald-500/10 text-emerald-400"
+                            : "bg-red-500/10 text-red-400"
+                        }`}
                       >
                         {product.status}
                       </span>
                     </div>
 
-                    <h3 className="text-lg font-black text-white italic truncate mb-4">
+                    {/* PRODUCT TITLE */}
+                    <h3
+                      onClick={() => setViewingProduct(product)}
+                      className="text-lg font-black text-white italic truncate mb-4 cursor-pointer hover:text-blue-400 transition-colors duration-300"
+                    >
                       {product.name}
                     </h3>
 
-                    {/* TECH SPECS (Expanded to 3 rows) */}
+                    {/* TECH SPECS: Consistent 3-row layout */}
                     <div className="space-y-1 mb-6 h-16 overflow-hidden">
-                      {" "}
-                      {/* Increased h-12 to h-16 */}
                       {product.attributes && Object.entries(product.attributes).length > 0 ? (
                         Object.entries(product.attributes)
-                          .slice(0, 3) // 🚀 Changed from 2 to 3 to show Switch, Layout, and Sensor
+                          .slice(0, 3)
                           .map(([key, value]) => (
                             <div key={key} className="flex justify-between text-[10px]">
                               <span className="text-slate-500 uppercase font-black tracking-tighter">
@@ -285,21 +308,40 @@ export default function ProductsPage() {
                             </div>
                           ))
                       ) : (
-                        <div className="text-[10px] text-slate-700 italic">
+                        <div className="text-[10px] text-slate-700 italic uppercase tracking-widest pt-2">
                           Standard Specification
                         </div>
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-800/50">
-                      <p className="text-2xl font-black text-white italic">${product.price}</p>
+                    {/* ADDITIONAL SPECS INDICATOR */}
+                    <div className="h-4 mb-4">
+                      {Object.entries(product.attributes || {}).length > 3 && (
+                        <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">
+                          + Additional Specs Available
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex-grow" /> 
+
+                    {/* FOOTER: Price and Actions */}
+                    <div className="mt-auto flex items-center justify-between pt-4 border-t border-slate-800/50">
+                      <p className="text-2xl font-black text-white italic">
+                        ${Number(product.price).toFixed(2)}
+                      </p>
+
                       <div className="relative">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setOpenMenuId(openMenuId === product.id ? null : product.id);
                           }}
-                          className={`p-2 rounded-lg transition-colors ${openMenuId === product.id ? "bg-slate-800 text-white" : "text-slate-500 hover:text-white"}`}
+                          className={`p-2 rounded-lg transition-colors ${
+                            openMenuId === product.id
+                              ? "bg-slate-800 text-white"
+                              : "text-slate-500 hover:text-white"
+                          }`}
                         >
                           <svg
                             className="w-5 h-5"
@@ -315,6 +357,7 @@ export default function ProductsPage() {
                             />
                           </svg>
                         </button>
+
                         {openMenuId === product.id && (
                           <div className="absolute right-0 bottom-full mb-2 w-36 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden animate-in slide-in-from-bottom-2 duration-200">
                             <button className="w-full px-4 py-2 text-left text-[10px] font-bold text-slate-400 hover:bg-slate-800 hover:text-white transition-colors uppercase tracking-widest">
@@ -382,6 +425,11 @@ export default function ProductsPage() {
         onCancel={() => setIsAdding(false)}
         onSave={handleCreateProduct}
         isSaving={isSaving}
+      />
+      <ProductDetailsDrawer
+        isOpen={!!viewingProduct}
+        product={viewingProduct}
+        onClose={() => setViewingProduct(null)}
       />
     </div>
   );
