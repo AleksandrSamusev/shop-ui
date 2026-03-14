@@ -5,7 +5,11 @@ import AddProductModal from "../components/AddProductModal";
 import ProductDetailsDrawer from "../components/ProductDetailsDrawer";
 
 export default function ProductsPage() {
-  const [productsPage, setProductsPage] = useState({ content: [], totalElements: 0 });
+  const [productsPage, setProductsPage] = useState({
+    content: [],
+    totalElements: 0,
+    totalPages: 0,
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -14,53 +18,27 @@ export default function ProductsPage() {
     totalValue: 0,
     topSeller: "N/A",
   });
-  const [deleteTarget, setDeleteTarget] = useState(null); // Stores { id, name }
+
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [viewingProduct, setViewingProduct] = useState(null);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(12); // Default to our 3-column grid size
 
+  // NAVIGATION STATE
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(12);
+
+  // 1. GLOBAL UI LISTENERS
   useEffect(() => {
     const closeAll = () => setOpenMenuId(null);
     window.addEventListener("click", closeAll);
     return () => window.removeEventListener("click", closeAll);
   }, []);
 
-  // 2. The "Open Modal" Trigger (Replaces your old handleDelete)
-  const triggerDelete = (product) => {
-    setDeleteTarget({ id: product.id, name: product.name });
-  };
-
-  // 3. The "Execute Purge" Logic (The actual API call)
-  const confirmDelete = async () => {
-    if (!deleteTarget) return;
-
-    try {
-      await productService.deleteProduct(deleteTarget.id);
-
-      // 1. OPTIMISTIC UI: Remove the card from the local state
-      setProductsPage((prev) => ({
-        ...prev,
-        content: prev.content.filter((p) => p.id !== deleteTarget.id),
-        totalElements: prev.totalElements - 1,
-      }));
-
-      // 2. REFRESH STATS
-      loadStats();
-
-      // 3. CLOSE MODAL
-      setDeleteTarget(null);
-    } catch (err) {
-      console.error("[ProductsPage] Purge failed:", err.message);
-      setDeleteTarget(null); // Close on error too
-    }
-  };
-
+  // 2. DATA LOADERS
   const loadStats = async () => {
     try {
-      // 🚀 THE FIX: This now matches your service's export exactly
       const data = await productService.getInventoryStats();
       setStats(data);
     } catch (err) {
@@ -68,13 +46,14 @@ export default function ProductsPage() {
     }
   };
 
+  // 1. UPDATED: Fetch Products to use dynamic state
   const fetchProducts = async () => {
     try {
       const data = await productService.getAllProducts({
         search: searchQuery,
-        page: currentPage, // 🚀 Uses your state (starts at 0)
-        size: pageSize, // 🚀 Uses your state (starts at 12)
-        sort: "id,desc", // 🚀 Matches your Controller's @RequestParam
+        page: currentPage, // 🚀 Uses reactive state
+        size: pageSize,
+        sort: "id,desc",
       });
       setProductsPage(data);
     } catch (err) {
@@ -84,9 +63,8 @@ export default function ProductsPage() {
     }
   };
 
-  // 1. The Dashboard Refresher
+  // 3. THE REFRESH ENGINE
   const refreshDashboard = async () => {
-    // Fire both requests in parallel for maximum "Veloce" speed
     try {
       await Promise.all([fetchProducts(), loadStats()]);
     } catch (err) {
@@ -94,17 +72,75 @@ export default function ProductsPage() {
     }
   };
 
-  // THE RAPTOR DEBOUNCE
+  // 2. UPDATED: Debounce Effect (Must include dependencies)
   useEffect(() => {
     const timer = setTimeout(refreshDashboard, 400);
     return () => clearTimeout(timer);
-    // 🚀 ADDED dependencies so 'Next' and 'Density' work!
+    // 🚀 Refresh when ANY navigation or search state changes
   }, [searchQuery, currentPage, pageSize]);
+
+  // 3. FIXED: Search Input Handler (Forces reset to Page 1)
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(0); // 🚀 THE FIX: Snap back to first page for new results
+  };
+
+  // 4. FIXED: Clear Search Handler
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    setCurrentPage(0); // 🚀 THE FIX: Snap back to first page on clear
+  };
+
+  // 6. CRUD HANDLERS
+  const triggerDelete = (product) => {
+    setDeleteTarget({ id: product.id, name: product.name });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await productService.deleteProduct(deleteTarget.id);
+      // Optimistic refresh
+      await refreshDashboard();
+      setDeleteTarget(null);
+    } catch (err) {
+      console.error("[ProductsPage] Purge failed:", err.message);
+      setDeleteTarget(null);
+    }
+  };
+
+  const handleCreateProduct = async (formData) => {
+    setIsSaving(true);
+    try {
+      const cleanData = {
+        ...formData,
+        sku: formData.sku.toUpperCase().trim(),
+        price: formData.price ? parseFloat(formData.price) : null,
+        costPrice: formData.costPrice ? parseFloat(formData.costPrice) : null,
+        quantityInStock:
+          formData.quantityInStock !== "" ? parseInt(formData.quantityInStock) : null,
+
+        lowStockThreshold:
+          formData.lowStockThreshold !== "" ? parseInt(formData.lowStockThreshold) : null,
+        currencyCode: "USD",
+        createdBy: "admin",
+      };
+
+      await productService.createProduct(cleanData);
+      setCurrentPage(0);
+      await refreshDashboard();
+      setIsAdding(false);
+    } catch (err) {
+      // 🚀 THE FIX: By throwing here, your Modal's try/catch finally takes over
+      throw err;
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (loading) {
     return (
       <div className="h-full w-full bg-slate-950 flex flex-col items-center justify-center space-y-4">
-        {/* Veloce Blue Spinner */}
         <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
         <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] animate-pulse">
           Igniting the Forge...
@@ -112,45 +148,6 @@ export default function ProductsPage() {
       </div>
     );
   }
-
-  const handleCreateProduct = async (formData) => {
-    setIsSaving(true);
-    try {
-      // THE CLEAN DATA PUSH: No 'status' included!
-      const cleanData = {
-        name: formData.name,
-        sku: formData.sku.toUpperCase().trim(),
-        category: formData.category,
-        manufacturer: formData.manufacturer || "Veloce Forge",
-
-        // Numbers must be cast to satisfy @Digits and @Min constraints
-        price: parseFloat(formData.price) || 0,
-        costPrice: parseFloat(formData.costPrice) || 0,
-        quantityInStock: parseInt(formData.quantityInStock) || 0,
-        lowStockThreshold: parseInt(formData.lowStockThreshold) || 10,
-
-        imageUrl: formData.imageUrl,
-        attributes: formData.attributes,
-
-        // Audit Data (Matches @NotBlank in your DTO)
-        currencyCode: "USD",
-        createdBy: "admin",
-      };
-
-      await productService.createProduct(cleanData);
-
-      // SUCCESS: Close modal and refresh the 1400px high-density grid
-      await refreshDashboard();
-      setIsAdding(false);
-    } catch (err) {
-      // Log the specific backend @Validation messages on your 27" monitor
-      const errors = err.response?.data?.errors;
-      console.error("Forge failed:", errors || err.message);
-      alert(errors ? errors.join("\n") : "Check the form data for errors.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   return (
     <div className="flex flex-col h-full bg-slate-950 overflow-hidden">
@@ -175,13 +172,13 @@ export default function ProductsPage() {
               placeholder="Search by SKU, Name, or Category..."
               className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-10 py-2 text-xs text-white focus:border-blue-500 outline-none transition-all"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
             />
 
             {/* 🚀 THE CLEAR BUTTON: Appears only if query exists */}
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery("")} // Instant Reset
+                onClick={handleClearSearch}
                 className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-white hover:bg-slate-800 rounded-md transition-all animate-in fade-in zoom-in-75 duration-200"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -525,7 +522,7 @@ export default function ProductsPage() {
       />
       <AddProductModal
         isOpen={isAdding}
-        onCancel={() => setIsAdding(false)}
+        onClose={() => setIsAdding(false)} // 🚀 THE FIX: Rename 'onCancel' to 'onClose'
         onSave={handleCreateProduct}
         isSaving={isSaving}
       />
