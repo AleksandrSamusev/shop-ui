@@ -294,9 +294,18 @@ export default function ProductsPage() {
 
                     {/* METADATA HEADER */}
                     <div className="flex justify-between items-start mb-2">
-                      <span className="text-[9px] font-mono bg-slate-950 px-2 py-1 rounded-lg text-slate-500 border border-slate-800 uppercase">
-                        {product.sku}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        {" "}
+                        {/* Stacked SKU and Category */}
+                        <span className="text-[9px] font-mono bg-slate-950 px-2 py-1 rounded-lg text-slate-500 border border-slate-800 uppercase w-fit">
+                          {product.sku}
+                        </span>
+                        {/* 🚀 THE CATEGORY BADGE: Provides context for the search match */}
+                        <span className="text-[8px] font-black text-blue-500/80 uppercase tracking-widest px-1">
+                          {product.category}
+                        </span>
+                      </div>
+
                       <span
                         className={`text-[9px] font-black px-2 py-1 rounded-lg uppercase ${
                           product.status === "IN_STOCK"
@@ -315,18 +324,23 @@ export default function ProductsPage() {
                     >
                       {product.name}
                     </h3>
-
-                    {/* TECH SPECS: Consistent 3-row layout */}
-                    <div className="space-y-1 mb-6 h-16 overflow-hidden">
+                    {/* TECH SPECS: Precision-Engineered Layout */}
+                    <div className="space-y-1.5 mb-6 h-16 overflow-hidden mt-2">
                       {product.attributes && Object.entries(product.attributes).length > 0 ? (
                         Object.entries(product.attributes)
                           .slice(0, 3)
                           .map(([key, value]) => (
-                            <div key={key} className="flex justify-between text-[10px]">
-                              <span className="text-slate-500 uppercase font-black tracking-tighter">
-                                {key}:
+                            <div key={key} className="flex items-end gap-2 group/spec">
+                              {/* 1. Label: Clean and subtle */}
+                              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest shrink-0">
+                                {key}
                               </span>
-                              <span className="text-slate-300 font-medium truncate ml-4">
+
+                              {/* 2. The Leader Line: Fills the gap and guides the eye */}
+                              <div className="flex-1 border-b border-dotted border-slate-800 mb-1 opacity-50" />
+
+                              {/* 3. Value: High-contrast and aligned */}
+                              <span className="text-[10px] font-black text-slate-300 tracking-tight whitespace-nowrap">
                                 {value?.toString() || "N/A"}
                               </span>
                             </div>
@@ -352,7 +366,11 @@ export default function ProductsPage() {
                     {/* FOOTER: Price and Actions */}
                     <div className="mt-auto flex items-center justify-between pt-4 border-t border-slate-800/50">
                       <p className="text-2xl font-black text-white italic">
-                        $ {Number(product.price).toFixed(2)}
+                        {/* 🚀 THE FIX: Use toLocaleString for thousand separators */}${" "}
+                        {Number(product.price).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </p>
 
                       <div className="relative">
