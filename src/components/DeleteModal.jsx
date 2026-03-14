@@ -19,8 +19,8 @@ export default function DeleteModal({ isOpen, onConfirm, onCancel, itemName }) {
           </svg>
         </div>
 
-        <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-2">
-          Purge SKU?
+        <h2 className="text-2xl font-black text-white italic uppercase tracking-wide mb-2">
+          Delete SKU?
         </h2>
         <p className="text-slate-400 text-[10px] font-bold leading-relaxed mb-8 uppercase tracking-widest">
           Are you sure you want to permanently remove <span className="text-red-400">"{itemName}"</span>? This cannot be undone.
@@ -38,7 +38,7 @@ export default function DeleteModal({ isOpen, onConfirm, onCancel, itemName }) {
             onClick={onConfirm}
             className="flex-1 px-6 py-4 rounded-2xl bg-red-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-red-500 shadow-lg shadow-red-900/20 active:scale-95 transition-all"
           >
-            Confirm Purge
+            Confirm Delete
           </button>
         </div>
       </div>

@@ -19,6 +19,8 @@ export default function ProductsPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [viewingProduct, setViewingProduct] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(12); // Default to our 3-column grid size
 
   useEffect(() => {
     const closeAll = () => setOpenMenuId(null);
@@ -58,6 +60,7 @@ export default function ProductsPage() {
 
   const loadStats = async () => {
     try {
+      // 🚀 THE FIX: This now matches your service's export exactly
       const data = await productService.getInventoryStats();
       setStats(data);
     } catch (err) {
@@ -69,8 +72,9 @@ export default function ProductsPage() {
     try {
       const data = await productService.getAllProducts({
         search: searchQuery,
-        size: 12, // Higher density for 27" screens
-        sortBy: "id,desc",
+        page: currentPage, // 🚀 Uses your state (starts at 0)
+        size: pageSize, // 🚀 Uses your state (starts at 12)
+        sort: "id,desc", // 🚀 Matches your Controller's @RequestParam
       });
       setProductsPage(data);
     } catch (err) {
@@ -90,11 +94,12 @@ export default function ProductsPage() {
     }
   };
 
-  // 2. THE RAPTOR DEBOUNCE
+  // THE RAPTOR DEBOUNCE
   useEffect(() => {
     const timer = setTimeout(refreshDashboard, 400);
     return () => clearTimeout(timer);
-  }, [searchQuery]); // Re-runs when you type
+    // 🚀 ADDED dependencies so 'Next' and 'Density' work!
+  }, [searchQuery, currentPage, pageSize]);
 
   if (loading) {
     return (
@@ -152,6 +157,7 @@ export default function ProductsPage() {
       {/* 1. COMMAND BAR (Search & Actions) */}
       <header className="bg-slate-900/50 backdrop-blur-xl border-b border-slate-800 p-4 shrink-0">
         <div className="flex items-center justify-between max-w-[1400px]">
+          {/* SEARCH COMMAND BAR */}
           <div className="relative flex-1 max-w-md group">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-400 transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,13 +169,31 @@ export default function ProductsPage() {
                 />
               </svg>
             </span>
+
             <input
               type="text"
-              placeholder="Hunt by SKU, Name, or Category..."
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-xs text-white focus:border-blue-500 outline-none"
+              placeholder="Search by SKU, Name, or Category..."
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-10 py-2 text-xs text-white focus:border-blue-500 outline-none transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+
+            {/* 🚀 THE CLEAR BUTTON: Appears only if query exists */}
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")} // Instant Reset
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-white hover:bg-slate-800 rounded-md transition-all animate-in fade-in zoom-in-75 duration-200"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            )}
           </div>
           <button
             onClick={() => setIsAdding(true)}
@@ -224,7 +248,7 @@ export default function ProductsPage() {
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
                 Top Item
               </p>
-              <p className="text-lg font-black text-white italic truncate mt-1 tracking-tight">
+              <p className="text-lg font-bold text-white italic truncate mt-1 tracking-wide">
                 {stats.topSeller}
               </p>
             </div>
@@ -287,7 +311,7 @@ export default function ProductsPage() {
                     {/* PRODUCT TITLE */}
                     <h3
                       onClick={() => setViewingProduct(product)}
-                      className="text-lg font-black text-white italic truncate mb-4 cursor-pointer hover:text-blue-400 transition-colors duration-300"
+                      className="text-xl font-black text-white italic uppercase tracking-normal truncate mb-4 cursor-pointer hover:text-blue-400 transition-all duration-300"
                     >
                       {product.name}
                     </h3>
@@ -323,12 +347,12 @@ export default function ProductsPage() {
                       )}
                     </div>
 
-                    <div className="flex-grow" /> 
+                    <div className="flex-grow" />
 
                     {/* FOOTER: Price and Actions */}
                     <div className="mt-auto flex items-center justify-between pt-4 border-t border-slate-800/50">
                       <p className="text-2xl font-black text-white italic">
-                        ${Number(product.price).toFixed(2)}
+                        $ {Number(product.price).toFixed(2)}
                       </p>
 
                       <div className="relative">
@@ -410,6 +434,67 @@ export default function ProductsPage() {
               </div>
             )}
           </div>
+          {/* PAGINATION & DENSITY COMMAND BAR */}
+          <footer className="flex items-center justify-between pt-10 border-t border-slate-800/50 mt-10 mb-10">
+            {/* LEFT: DENSITY SELECTOR */}
+            <div className="flex items-center gap-4">
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                Density
+              </p>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(0); // Reset to first page when changing density
+                }}
+                className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-[10px] font-bold text-white uppercase outline-none focus:border-blue-500 transition-all cursor-pointer hover:bg-slate-800 appearance-none"
+              >
+                {[12, 24, 48].map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt} per page
+                  </option>
+                ))}
+              </select>
+              <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest">
+                Showing {productsPage.numberOfElements} of {productsPage.totalElements} Parts
+              </p>
+            </div>
+
+            {/* RIGHT: NAVIGATION CONTROLS */}
+            <div className="flex gap-3 items-center">
+              <button
+                disabled={productsPage.first}
+                onClick={() => setCurrentPage((prev) => prev - 1)}
+                className="px-6 py-3 bg-slate-900 border border-slate-800 rounded-2xl text-[10px] font-bold text-white uppercase hover:bg-slate-800 disabled:opacity-20 transition-all active:scale-95"
+              >
+                Previous
+              </button>
+
+              <div className="flex gap-2">
+                {[...Array(productsPage.totalPages)].map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i)}
+                    className={`w-10 h-10 rounded-2xl text-[10px] font-bold transition-all ${
+                      currentPage === i
+                        ? "bg-blue-600 text-white shadow-xl shadow-blue-900/40"
+                        : "bg-slate-900 text-slate-500 border border-slate-800 hover:text-white"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                disabled={productsPage.last}
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+                className="px-6 py-3 bg-slate-900 border border-slate-800 rounded-2xl text-[10px] font-bold text-white uppercase hover:bg-slate-800 disabled:opacity-20 transition-all active:scale-95"
+              >
+                Next
+              </button>
+            </div>
+          </footer>
         </div>
       </main>
 

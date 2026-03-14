@@ -13,8 +13,8 @@ export const productService = {
   deleteProduct: async (id) => {
     await api.delete(`/products/${id}`);
   },
-      createProduct: async (productData) => {
-        const response = await api.post('/products', productData);
-        return response.data.data;
-    },
+  createProduct: async (productData) => {
+    const response = await api.post("/products", productData);
+    return response.data.data;
+  },
 };
