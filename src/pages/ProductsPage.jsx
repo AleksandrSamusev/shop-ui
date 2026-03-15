@@ -18,16 +18,21 @@ export default function ProductsPage() {
     totalValue: 0,
     topSeller: "N/A",
   });
-
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [viewingProduct, setViewingProduct] = useState(null);
-
-  // NAVIGATION STATE
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(12);
+  const [productToEdit, setProductToEdit] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showSuccess = (message) => {
+    setToast(message);
+    // Auto-expire after 4 seconds for a clean "Forge" feel
+    setTimeout(() => setToast(null), 4000);
+  };
 
   // 1. GLOBAL UI LISTENERS
   useEffect(() => {
@@ -132,6 +137,52 @@ export default function ProductsPage() {
       setIsAdding(false);
     } catch (err) {
       // 🚀 THE FIX: By throwing here, your Modal's try/catch finally takes over
+      throw err;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Open Modal for Creating
+  const handleAddClick = () => {
+    setProductToEdit(null); // Ensure it's clean for a new part
+    setIsAdding(true);
+  };
+
+  // Open Modal for Updating
+  const handleEditClick = (product) => {
+    setProductToEdit(product); // Fill the "tank" with existing data
+    setIsAdding(true);
+  };
+
+  const handleUpdateProduct = async (formData) => {
+    setIsSaving(true);
+    try {
+      // 🚀 THE FIX: Destructure both 'id' AND 'sku' out of the data
+      const { id, sku, ...dataToSync } = formData;
+
+      const cleanData = {
+        ...dataToSync,
+        // Recalculate or format your numeric fields as usual
+        price: dataToSync.price ? parseFloat(dataToSync.price) : null,
+        costPrice: dataToSync.costPrice ? parseFloat(dataToSync.costPrice) : null,
+        quantityInStock:
+          dataToSync.quantityInStock !== "" ? parseInt(dataToSync.quantityInStock) : null,
+        lowStockThreshold:
+          dataToSync.lowStockThreshold !== "" ? parseInt(dataToSync.lowStockThreshold) : null,
+
+        updatedBy: "admin",
+        version: dataToSync.version,
+      };
+
+      // 🌐 BACKEND SYNC: URL gets ID, Body gets only the allowed fields
+      await productService.updateProduct(id, cleanData);
+
+      await refreshDashboard();
+      setIsAdding(false);
+      setProductToEdit(null);
+      showSuccess(`${cleanData.name.toUpperCase()} SUCCESSFULLY UPDATED`);
+    } catch (err) {
       throw err;
     } finally {
       setIsSaving(false);
@@ -399,7 +450,14 @@ export default function ProductsPage() {
 
                         {openMenuId === product.id && (
                           <div className="absolute right-0 bottom-full mb-2 w-36 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden animate-in slide-in-from-bottom-2 duration-200">
-                            <button className="w-full px-4 py-2 text-left text-[10px] font-bold text-slate-400 hover:bg-slate-800 hover:text-white transition-colors uppercase tracking-widest">
+                            {/* EDIT DETAILS BUTTON */}
+                            <button
+                              onClick={() => {
+                                handleEditClick(product); // 🚀 THE LINK: Opens the Modal with Data
+                                setOpenMenuId(null); // 🚀 THE CLEANUP: Closes the three-dot menu
+                              }}
+                              className="w-full px-4 py-2 text-left text-[10px] font-bold text-slate-400 hover:bg-slate-800 hover:text-white transition-colors uppercase tracking-widest"
+                            >
                               Edit Details
                             </button>
                             <button
@@ -522,8 +580,12 @@ export default function ProductsPage() {
       />
       <AddProductModal
         isOpen={isAdding}
-        onClose={() => setIsAdding(false)} // 🚀 THE FIX: Rename 'onCancel' to 'onClose'
-        onSave={handleCreateProduct}
+        product={productToEdit} // 🚀 THE PROP: Tells modal if it's Edit or Add
+        onClose={() => {
+          setIsAdding(false);
+          setProductToEdit(null); // Clear state on close
+        }}
+        onSave={productToEdit ? handleUpdateProduct : handleCreateProduct}
         isSaving={isSaving}
       />
       <ProductDetailsDrawer
@@ -531,6 +593,33 @@ export default function ProductsPage() {
         product={viewingProduct}
         onClose={() => setViewingProduct(null)}
       />
+      {/* 🚀 THE STATUS BAR: High-density, professional toast */}
+      {toast && (
+        <div className="fixed top-8 right-8 z-[100] animate-in fade-in slide-in-from-right-8 duration-500">
+          <div className="bg-slate-900/90 backdrop-blur-xl border border-blue-500/50 rounded-2xl p-4 shadow-2xl shadow-blue-900/20 flex items-center gap-4 min-w-[320px]">
+            <div className="w-1.5 h-8 bg-blue-500 rounded-full animate-pulse" />
+            <div className="flex-1">
+              <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none">
+                System Notification
+              </p>
+              <p className="text-sm font-bold text-white mt-1 uppercase tracking-tight">{toast}</p>
+            </div>
+            <button
+              onClick={() => setToast(null)}
+              className="p-1 text-slate-500 hover:text-white transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
