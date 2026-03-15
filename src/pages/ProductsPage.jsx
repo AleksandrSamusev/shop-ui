@@ -1,8 +1,15 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, lazy } from "react";
 import { productService } from "../services/productService";
 import DeleteModal from "../components/DeleteModal";
 import AddProductModal from "../components/AddProductModal";
 import ProductDetailsDrawer from "../components/ProductDetailsDrawer";
+import ProductCard from "../components/ProductCard";
+import InventoryMetrics from "../components/InventoryMetrics";
+import ProductsPagination from "../components/ProductsPagination";
+import GridEmptyState from "../components/GridEmptyState";
+import ProductSearchBar from "../components/ProductSearchBar";
+import SystemToast from "../components/SystemToast";
+import ProductDeleteConfirmationModal from "../components/ProductDeleteConfirmationModal";
 
 export default function ProductsPage() {
   const [productsPage, setProductsPage] = useState({
@@ -10,15 +17,15 @@ export default function ProductsPage() {
     totalElements: 0,
     totalPages: 0,
   });
-  const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
+
   const [stats, setStats] = useState({
     totalSkus: 0,
     lowStockCount: 0,
     totalValue: 0,
     topSeller: "N/A",
   });
-  const [openMenuId, setOpenMenuId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [viewingProduct, setViewingProduct] = useState(null);
@@ -27,6 +34,7 @@ export default function ProductsPage() {
   const [productToEdit, setProductToEdit] = useState(null);
   const [toast, setToast] = useState(null);
   const [productToDelete, setProductToDelete] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
   const productRef = useRef(productToDelete);
 
   const showSuccess = (message) => {
@@ -107,33 +115,19 @@ export default function ProductsPage() {
   };
 
   const confirmDelete = useCallback(async () => {
-    console.log("2. confirmDelete Function Reached");
-
-    // 🚀 THE FIX: We use productRef.current instead of the state variable
-    // This is physically impossible to be "stale"
     const currentProduct = productRef.current;
-
     if (!currentProduct) {
-      console.log("3. Blocked: productToDelete is null");
       return;
     }
-
     try {
-      // 🌐 BACKEND SYNC
       await productService.deleteProduct(currentProduct.id);
-
-      // Refresh and notify
       await refreshDashboard();
-
-      // 🚀 THE SUCCESS SIGNAL
       showSuccess(`${currentProduct.name.toUpperCase()} PERMANENTLY REMOVED`);
-
-      // 🚀 CLEANUP
       setProductToDelete(null);
     } catch (err) {
       console.error("Destruction failed:", err);
     }
-  }, [refreshDashboard]); // productToDelete is no longer a dependency!
+  }, [refreshDashboard]);
 
   const handleCreateProduct = async (formData) => {
     setIsSaving(true);
@@ -172,7 +166,7 @@ export default function ProductsPage() {
 
   // Open Modal for Updating
   const handleEditClick = (product) => {
-    setProductToEdit(product); // Fill the "tank" with existing data
+    setProductToEdit(product);
     setIsAdding(true);
   };
 
@@ -184,7 +178,6 @@ export default function ProductsPage() {
 
       const cleanData = {
         ...dataToSync,
-        // Recalculate or format your numeric fields as usual
         price: dataToSync.price ? parseFloat(dataToSync.price) : null,
         costPrice: dataToSync.costPrice ? parseFloat(dataToSync.costPrice) : null,
         quantityInStock:
@@ -196,9 +189,7 @@ export default function ProductsPage() {
         version: dataToSync.version,
       };
 
-      // 🌐 BACKEND SYNC: URL gets ID, Body gets only the allowed fields
       await productService.updateProduct(id, cleanData);
-
       await refreshDashboard();
       setIsAdding(false);
       setProductToEdit(null);
@@ -215,7 +206,7 @@ export default function ProductsPage() {
       <div className="h-full w-full bg-slate-950 flex flex-col items-center justify-center space-y-4">
         <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
         <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] animate-pulse">
-          Igniting the Forge...
+          Loading...
         </p>
       </div>
     );
@@ -223,47 +214,16 @@ export default function ProductsPage() {
 
   return (
     <div className="flex flex-col h-full bg-slate-950 overflow-hidden">
-      {/* 1. COMMAND BAR (Search & Actions) */}
       <header className="bg-slate-900/50 backdrop-blur-xl border-b border-slate-800 p-4 shrink-0">
         <div className="flex items-center justify-between max-w-[1400px]">
-          {/* SEARCH COMMAND BAR */}
-          <div className="relative flex-1 max-w-md group">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-400 transition-colors">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </span>
+          {/* PRODUCT SEARCH */}
+          <ProductSearchBar
+            value={searchQuery}
+            onChange={handleSearchChange}
+            onClick={handleClearSearch}
+          />
 
-            <input
-              type="text"
-              placeholder="Search by SKU, Name, or Category..."
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-10 py-2 text-xs text-white focus:border-blue-500 outline-none transition-all"
-              value={searchQuery}
-              onChange={handleSearchChange}
-            />
-
-            {/* 🚀 THE CLEAR BUTTON: Appears only if query exists */}
-            {searchQuery && (
-              <button
-                onClick={handleClearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-white hover:bg-slate-800 rounded-md transition-all animate-in fade-in zoom-in-75 duration-200"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            )}
-          </div>
+          {/* ADD PRODUCT BUTTON */}
           <button
             onClick={() => setIsAdding(true)}
             className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide shadow-lg active:scale-95 transition-all"
@@ -273,341 +233,72 @@ export default function ProductsPage() {
         </div>
       </header>
 
-      {/* 2. THE HIGH-DENSITY WORKSPACE */}
       <main className="flex-1 overflow-y-auto p-12 bg-slate-950">
         <div className="max-w-[1400px] space-y-10">
-          {/* INVENTORY METRICS COMMAND CENTER */}
-          <div className="grid grid-cols-4 gap-4">
-            <div className="bg-slate-900/40 border border-slate-800/60 p-5 rounded-3xl backdrop-blur-sm">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
-                Total SKUs
-              </p>
-              <p className="text-3xl font-black text-white italic tracking-tighter">
-                {stats.totalSkus}
-              </p>
-            </div>
+          <InventoryMetrics stats={stats} />
 
-            <div className="bg-slate-900/40 border border-slate-800/60 p-5 rounded-3xl backdrop-blur-sm">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
-                Stock Value
-              </p>
-              <p className="text-3xl font-black text-blue-400 italic tracking-tighter">
-                ${stats.totalValue?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </p>
-            </div>
-
-            <div
-              className={`p-5 rounded-3xl border transition-all duration-700 shadow-2xl ${
-                stats.lowStockCount > 0
-                  ? "bg-amber-500/10 border-amber-500/40 shadow-amber-900/20"
-                  : "bg-slate-900/40 border-slate-800/60"
-              }`}
-            >
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
-                Low Stock
-              </p>
-              <p
-                className={`text-3xl font-black italic tracking-tighter ${stats.lowStockCount > 0 ? "text-amber-500 animate-pulse" : "text-white"}`}
-              >
-                {stats.lowStockCount}
-              </p>
-            </div>
-
-            <div className="bg-slate-900/40 border border-slate-800/60 p-5 rounded-3xl backdrop-blur-sm">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
-                Top Item
-              </p>
-              <p className="text-lg font-bold text-white italic truncate mt-1 tracking-wide">
-                {stats.topSeller}
-              </p>
-            </div>
-          </div>
-
-          {/* 🚀 CONDITIONAL RENDER: GRID OR EMPTY STATE */}
+          {/* CONDITIONAL RENDER: PRODUCTS GRID OR EMPTY STATE */}
           <div className="mt-10">
             {productsPage.content && productsPage.content.length > 0 ? (
-              /* CASE A: SHOW THE PRODUCT MATRIX */
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {productsPage.content.map((product) => (
-                  <div
+                  <ProductCard
                     key={product.id}
-                    className="bg-slate-900/50 border border-slate-800 p-6 rounded-[2rem] hover:border-blue-500/30 transition-all group relative overflow-hidden flex flex-col"
-                  >
-                    {/* 🚀 IMAGE SECTION: Single layer, high-intent hit area */}
-                    <div
-                      onClick={() => setViewingProduct(product)}
-                      className="relative h-48 -mx-6 -mt-6 mb-6 bg-white overflow-hidden cursor-pointer group/img border-b border-slate-800/50"
-                      /* 💡 Note: -mx-6 and -mt-6 pull the image to the very edges of the card */
-                    >
-                      {product.imageUrl ? (
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover/img:scale-110 transition-all duration-700"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-slate-950 flex items-center justify-center">
-                          <span className="text-[10px] font-black text-slate-800 uppercase italic tracking-widest">
-                            No Visual Data
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Visual Hint Overlay */}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 bg-slate-950/40 backdrop-blur-[2px]">
-                        <div className="bg-blue-600/90 text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-xl shadow-2xl">
-                          View Specs
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* METADATA HEADER */}
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex flex-col gap-1">
-                        {" "}
-                        {/* Stacked SKU and Category */}
-                        <span className="text-[9px] font-mono bg-slate-950 px-2 py-1 rounded-lg text-slate-500 border border-slate-800 uppercase w-fit">
-                          {product.sku}
-                        </span>
-                        {/* 🚀 THE CATEGORY BADGE: Provides context for the search match */}
-                        <span className="text-[8px] font-black text-blue-500/80 uppercase tracking-widest px-1">
-                          {product.category}
-                        </span>
-                      </div>
-
-                      <span
-                        className={`text-[9px] font-black px-2 py-1 rounded-lg uppercase ${
-                          product.status === "IN_STOCK"
-                            ? "bg-emerald-500/10 text-emerald-400"
-                            : "bg-red-500/10 text-red-400"
-                        }`}
-                      >
-                        {product.status}
-                      </span>
-                    </div>
-
-                    {/* PRODUCT TITLE */}
-                    <h3
-                      onClick={() => setViewingProduct(product)}
-                      className="text-xl font-black text-white italic uppercase tracking-normal truncate mb-4 cursor-pointer hover:text-blue-400 transition-all duration-300"
-                    >
-                      {product.name}
-                    </h3>
-                    {/* TECH SPECS: Precision-Engineered Layout */}
-                    <div className="space-y-1.5 mb-6 h-16 overflow-hidden mt-2">
-                      {product.attributes && Object.entries(product.attributes).length > 0 ? (
-                        Object.entries(product.attributes)
-                          .slice(0, 3)
-                          .map(([key, value]) => (
-                            <div key={key} className="flex items-end gap-2 group/spec">
-                              {/* 1. Label: Clean and subtle */}
-                              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest shrink-0">
-                                {key}
-                              </span>
-
-                              {/* 2. The Leader Line: Fills the gap and guides the eye */}
-                              <div className="flex-1 border-b border-dotted border-slate-800 mb-1 opacity-50" />
-
-                              {/* 3. Value: High-contrast and aligned */}
-                              <span className="text-[10px] font-black text-slate-300 tracking-tight whitespace-nowrap">
-                                {value?.toString() || "N/A"}
-                              </span>
-                            </div>
-                          ))
-                      ) : (
-                        <div className="text-[10px] text-slate-700 italic uppercase tracking-widest pt-2">
-                          Standard Specification
-                        </div>
-                      )}
-                    </div>
-
-                    {/* ADDITIONAL SPECS INDICATOR */}
-                    <div className="h-4 mb-4">
-                      {Object.entries(product.attributes || {}).length > 3 && (
-                        <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">
-                          + Additional Specs Available
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex-grow" />
-
-                    {/* FOOTER: Price and Actions */}
-                    <div className="mt-auto flex items-center justify-between pt-4 border-t border-slate-800/50">
-                      <p className="text-2xl font-black text-white italic">
-                        {/* 🚀 THE FIX: Use toLocaleString for thousand separators */}${" "}
-                        {Number(product.price).toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </p>
-
-                      <div className="relative">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenMenuId(openMenuId === product.id ? null : product.id);
-                          }}
-                          className={`p-2 rounded-lg transition-colors ${
-                            openMenuId === product.id
-                              ? "bg-slate-800 text-white"
-                              : "text-slate-500 hover:text-white"
-                          }`}
-                        >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                            />
-                          </svg>
-                        </button>
-
-                        {openMenuId === product.id && (
-                          <div className="absolute right-0 bottom-full mb-2 w-36 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden animate-in slide-in-from-bottom-2 duration-200">
-                            {/* EDIT DETAILS BUTTON */}
-                            <button
-                              onClick={() => {
-                                handleEditClick(product); // 🚀 THE LINK: Opens the Modal with Data
-                                setOpenMenuId(null); // 🚀 THE CLEANUP: Closes the three-dot menu
-                              }}
-                              className="w-full px-4 py-2 text-left text-[10px] font-bold text-slate-400 hover:bg-slate-800 hover:text-white transition-colors uppercase tracking-widest"
-                            >
-                              Edit Details
-                            </button>
-                            <button
-                              onClick={() => {
-                                setProductToDelete(product); // 🚀 Change from setDeleteTarget to this
-                                setOpenMenuId(null);
-                              }}
-                              className="w-full px-4 py-2 text-left text-[10px] font-bold text-red-500 hover:bg-red-500/10 transition-colors uppercase tracking-widest border-t border-slate-800/50"
-                            >
-                              Delete SKU
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                    product={product}
+                    onEdit={() => {
+                      handleEditClick(product);
+                      setOpenMenuId(null);
+                    }}
+                    onDelete={() => {
+                      setProductToDelete(product); // 🚀 Change from setDeleteTarget to this
+                      setOpenMenuId(null);
+                    }}
+                    openMenuId={openMenuId}
+                    setOpenMenuId={setOpenMenuId}
+                    setViewingProduct={() => setViewingProduct(product)}
+                  />
                 ))}
               </div>
             ) : (
-              /* CASE B: SHOW THE ENTERPRISE EMPTY STATE */
-              <div className="flex flex-col items-center justify-center py-32 border-2 border-dashed border-slate-800/50 rounded-[3rem] bg-slate-900/10 animate-in fade-in zoom-in-95 duration-700">
-                <div className="w-20 h-20 bg-blue-500/5 rounded-3xl flex items-center justify-center mb-8 border border-blue-500/10">
-                  <svg
-                    className="w-10 h-10 text-slate-700"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.5"
-                      d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-white italic uppercase tracking-normal mb-2">
-                  Inventory Catalog Empty
-                </h3>
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em] mb-8 text-center max-w-xs leading-relaxed">
-                  There are no products currently listed.
-                  <br /> Add your first item to begin managing your stock.
-                </p>
-                <button
-                  onClick={() => setIsAdding(true)}
-                  className="group flex items-center gap-3 bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-900/20 transition-all active:scale-95"
-                >
-                  <span className="text-lg">+</span>Create New Product
-                </button>
-              </div>
+              <GridEmptyState onClick={() => setIsAdding(true)} />
             )}
           </div>
+
           {/* PAGINATION & DENSITY COMMAND BAR */}
-          <footer className="flex items-center justify-between pt-10 border-t border-slate-800/50 mt-10 mb-10">
-            {/* LEFT: DENSITY SELECTOR */}
-            <div className="flex items-center gap-4">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                Density
-              </p>
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setCurrentPage(0); // Reset to first page when changing density
-                }}
-                className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-[10px] font-bold text-white uppercase outline-none focus:border-blue-500 transition-all cursor-pointer hover:bg-slate-800 appearance-none"
-              >
-                {[12, 24, 48].map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt} per page
-                  </option>
-                ))}
-              </select>
-              <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest">
-                Showing {productsPage.numberOfElements} of {productsPage.totalElements} Parts
-              </p>
-            </div>
-
-            {/* RIGHT: NAVIGATION CONTROLS */}
-            <div className="flex gap-3 items-center">
-              <button
-                disabled={productsPage.first}
-                onClick={() => setCurrentPage((prev) => prev - 1)}
-                className="px-6 py-3 bg-slate-900 border border-slate-800 rounded-2xl text-[10px] font-bold text-white uppercase hover:bg-slate-800 disabled:opacity-20 transition-all active:scale-95"
-              >
-                Previous
-              </button>
-
-              <div className="flex gap-2">
-                {[...Array(productsPage.totalPages)].map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentPage(i)}
-                    className={`w-10 h-10 rounded-2xl text-[10px] font-bold transition-all ${
-                      currentPage === i
-                        ? "bg-blue-600 text-white shadow-xl shadow-blue-900/40"
-                        : "bg-slate-900 text-slate-500 border border-slate-800 hover:text-white"
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                disabled={productsPage.last}
-                onClick={() => setCurrentPage((prev) => prev + 1)}
-                className="px-6 py-3 bg-slate-900 border border-slate-800 rounded-2xl text-[10px] font-bold text-white uppercase hover:bg-slate-800 disabled:opacity-20 transition-all active:scale-95"
-              >
-                Next
-              </button>
-            </div>
-          </footer>
+          <ProductsPagination
+            pageSize={pageSize}
+            totalPages={productsPage.totalPages}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            setPageSize={setPageSize}
+            numberOfElements={productsPage.numberOfElements}
+            totalElements={productsPage.totalElements}
+            first={productsPage.first}
+            last={productsPage.last}
+            handleSelection={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(0);
+            }}
+            handleClick={(pageIndex) => setCurrentPage(pageIndex)} 
+            handleDecreaseClick={() => setCurrentPage((prev) => prev - 1)}
+            handleIncreaseClick={() => setCurrentPage((prev) => prev + 1)}
+          />
         </div>
       </main>
 
       {/* OVERLAYS */}
       <DeleteModal
-        isOpen={!!productToDelete} // 🚀 MUST match productToDelete
+        isOpen={!!productToDelete}
         itemName={productToDelete?.name}
         onCancel={() => setProductToDelete(null)}
         onConfirm={confirmDelete}
       />
       <AddProductModal
         isOpen={isAdding}
-        product={productToEdit} // 🚀 THE PROP: Tells modal if it's Edit or Add
+        product={productToEdit}
         onClose={() => {
           setIsAdding(false);
-          setProductToEdit(null); // Clear state on close
+          setProductToEdit(null);
         }}
         onSave={productToEdit ? handleUpdateProduct : handleCreateProduct}
         isSaving={isSaving}
@@ -617,83 +308,17 @@ export default function ProductsPage() {
         product={viewingProduct}
         onClose={() => setViewingProduct(null)}
       />
-      {/* 🚀 THE STATUS BAR: High-density, professional toast */}
-      {toast && (
-        <div className="fixed top-8 right-8 z-[100] animate-in fade-in slide-in-from-right-8 duration-500">
-          <div className="bg-slate-900/90 backdrop-blur-xl border border-blue-500/50 rounded-2xl p-4 shadow-2xl shadow-blue-900/20 flex items-center gap-4 min-w-[320px]">
-            <div className="w-1.5 h-8 bg-blue-500 rounded-full animate-pulse" />
-            <div className="flex-1">
-              <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none">
-                System Notification
-              </p>
-              <p className="text-sm font-bold text-white mt-1 uppercase tracking-tight">{toast}</p>
-            </div>
-            <button
-              onClick={() => setToast(null)}
-              className="p-1 text-slate-500 hover:text-white transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
 
-      {/* 🚀 THE DESTRUCTION PROMPT: High-density, professional confirmation */}
+      {/* SYSTEM TOAST */}
+      {toast && <SystemToast toast={toast} onClick={() => setToast(null)} />}
+
+      {/* DELETE PRODUCT CONFIRMATION MODAL */}
       {productToDelete && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl">
-            <div className="flex flex-col items-center text-center space-y-4">
-              {/* WARNING ICON */}
-              <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20">
-                <svg
-                  className="w-8 h-8 text-red-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-              </div>
-
-              <h3 className="text-xl font-black text-white uppercase tracking-tight">
-                Confirm Destruction
-              </h3>
-              <p className="text-[11px] text-slate-500 uppercase tracking-widest leading-relaxed">
-                You are about to permanently remove{" "}
-                <span className="text-white font-bold">{productToDelete.name}</span> from the fleet
-                database. This action cannot be reversed.
-              </p>
-
-              {/* ACTIONS: Symmetrical h-[48px] buttons */}
-              <div className="grid grid-cols-2 gap-4 w-full pt-4">
-                <button
-                  onClick={() => setProductToDelete(null)}
-                  className="h-[48px] rounded-2xl text-[10px] font-black text-slate-500 uppercase tracking-widest hover:bg-slate-800 transition-all"
-                >
-                  Abort
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="h-[48px] bg-red-600 hover:bg-red-500 rounded-2xl text-[10px] font-black text-white uppercase tracking-widest shadow-lg shadow-red-900/20 transition-all active:scale-95"
-                >
-                  Confirm Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ProductDeleteConfirmationModal
+          productToDelete={productToDelete.name}
+          setProductToDelete={() => setProductToDelete(null)}
+          confirmDelete={confirmDelete}
+        />
       )}
     </div>
   );
