@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { productService } from "../services/productService";
 import DeleteModal from "../components/DeleteModal";
 import AddProductModal from "../components/AddProductModal";
@@ -18,7 +18,6 @@ export default function ProductsPage() {
     totalValue: 0,
     topSeller: "N/A",
   });
-  const [deleteTarget, setDeleteTarget] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -27,6 +26,8 @@ export default function ProductsPage() {
   const [pageSize, setPageSize] = useState(12);
   const [productToEdit, setProductToEdit] = useState(null);
   const [toast, setToast] = useState(null);
+  const [productToDelete, setProductToDelete] = useState(null);
+  const productRef = useRef(productToDelete);
 
   const showSuccess = (message) => {
     setToast(message);
@@ -40,6 +41,10 @@ export default function ProductsPage() {
     window.addEventListener("click", closeAll);
     return () => window.removeEventListener("click", closeAll);
   }, []);
+
+  useEffect(() => {
+    productRef.current = productToDelete;
+  }, [productToDelete]);
 
   // 2. DATA LOADERS
   const loadStats = async () => {
@@ -101,18 +106,34 @@ export default function ProductsPage() {
     setDeleteTarget({ id: product.id, name: product.name });
   };
 
-  const confirmDelete = async () => {
-    if (!deleteTarget) return;
-    try {
-      await productService.deleteProduct(deleteTarget.id);
-      // Optimistic refresh
-      await refreshDashboard();
-      setDeleteTarget(null);
-    } catch (err) {
-      console.error("[ProductsPage] Purge failed:", err.message);
-      setDeleteTarget(null);
+  const confirmDelete = useCallback(async () => {
+    console.log("2. confirmDelete Function Reached");
+
+    // 🚀 THE FIX: We use productRef.current instead of the state variable
+    // This is physically impossible to be "stale"
+    const currentProduct = productRef.current;
+
+    if (!currentProduct) {
+      console.log("3. Blocked: productToDelete is null");
+      return;
     }
-  };
+
+    try {
+      // 🌐 BACKEND SYNC
+      await productService.deleteProduct(currentProduct.id);
+
+      // Refresh and notify
+      await refreshDashboard();
+
+      // 🚀 THE SUCCESS SIGNAL
+      showSuccess(`${currentProduct.name.toUpperCase()} PERMANENTLY REMOVED`);
+
+      // 🚀 CLEANUP
+      setProductToDelete(null);
+    } catch (err) {
+      console.error("Destruction failed:", err);
+    }
+  }, [refreshDashboard]); // productToDelete is no longer a dependency!
 
   const handleCreateProduct = async (formData) => {
     setIsSaving(true);
@@ -461,7 +482,10 @@ export default function ProductsPage() {
                               Edit Details
                             </button>
                             <button
-                              onClick={() => triggerDelete(product)}
+                              onClick={() => {
+                                setProductToDelete(product); // 🚀 Change from setDeleteTarget to this
+                                setOpenMenuId(null);
+                              }}
                               className="w-full px-4 py-2 text-left text-[10px] font-bold text-red-500 hover:bg-red-500/10 transition-colors uppercase tracking-widest border-t border-slate-800/50"
                             >
                               Delete SKU
@@ -573,9 +597,9 @@ export default function ProductsPage() {
 
       {/* OVERLAYS */}
       <DeleteModal
-        isOpen={!!deleteTarget}
-        itemName={deleteTarget?.name}
-        onCancel={() => setDeleteTarget(null)}
+        isOpen={!!productToDelete} // 🚀 MUST match productToDelete
+        itemName={productToDelete?.name}
+        onCancel={() => setProductToDelete(null)}
         onConfirm={confirmDelete}
       />
       <AddProductModal
@@ -617,6 +641,57 @@ export default function ProductsPage() {
                 />
               </svg>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 🚀 THE DESTRUCTION PROMPT: High-density, professional confirmation */}
+      {productToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl">
+            <div className="flex flex-col items-center text-center space-y-4">
+              {/* WARNING ICON */}
+              <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                <svg
+                  className="w-8 h-8 text-red-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </div>
+
+              <h3 className="text-xl font-black text-white uppercase tracking-tight">
+                Confirm Destruction
+              </h3>
+              <p className="text-[11px] text-slate-500 uppercase tracking-widest leading-relaxed">
+                You are about to permanently remove{" "}
+                <span className="text-white font-bold">{productToDelete.name}</span> from the fleet
+                database. This action cannot be reversed.
+              </p>
+
+              {/* ACTIONS: Symmetrical h-[48px] buttons */}
+              <div className="grid grid-cols-2 gap-4 w-full pt-4">
+                <button
+                  onClick={() => setProductToDelete(null)}
+                  className="h-[48px] rounded-2xl text-[10px] font-black text-slate-500 uppercase tracking-widest hover:bg-slate-800 transition-all"
+                >
+                  Abort
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="h-[48px] bg-red-600 hover:bg-red-500 rounded-2xl text-[10px] font-black text-white uppercase tracking-widest shadow-lg shadow-red-900/20 transition-all active:scale-95"
+                >
+                  Confirm Delete
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
