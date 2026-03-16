@@ -1,22 +1,61 @@
 @import "tailwindcss";
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
 input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px #0f172a inset !important;
-    -webkit-text-fill-color: white !important;
-    
-    /* FIX: Solid White Cursor for maximum visibility */
-    caret-color: #ffffff !important; 
-    
-    font-family: inherit !important;
-    transition: background-color 5000s ease-in-out 0s;
+  -webkit-box-shadow: 0 0 0 1000px #0f172a inset !important;
+  -webkit-text-fill-color: white !important;
+
+  /* FIX: Solid White Cursor for maximum visibility */
+  caret-color: #ffffff !important;
+
+  font-family: inherit !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+.shake {
+  animation: shake 0.2s ease-in-out 0s 2;
 }
 
 /* Ensure all inputs in Veloce have the same high-contrast cursor */
-input, textarea, select {
-    caret-color: #ffffff !important;
+input,
+textarea,
+select {
+  caret-color: #ffffff !important;
+}
+
+.dropdown-menu {
+  position: absolute;
+  z-index: 9999 !important; /* Forces the menu to the top layer */
+}
+
+.filter-bar-container {
+  position: relative;
+  z-index: 50; /* Ensures the entire filter row sits above the product grid */
+}
+
+.header-section {
+  overflow: visible !important;
 }

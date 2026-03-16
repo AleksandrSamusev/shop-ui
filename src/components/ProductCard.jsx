@@ -42,26 +42,25 @@ export default function ProductCard({
         </div>
       </div>
 
-      {/* 🚀 THE MASTERPIECE FINAL: Edge-to-Edge Alignment & Tight Vertical Flow */}
       <div className="flex justify-between items-start mb-4 px-0">
         {/* 1. LEFT COLUMN: IDENTITY (SKU + Category) */}
         <div className="flex flex-col gap-1">
-          <span className="px-2 py-0.5 bg-slate-950 border border-slate-800 rounded-lg text-[8px] font-mono text-slate-600 uppercase w-fit">
+          <span className="px-2 py-1 bg-slate-950 border border-slate-700 rounded-lg text-[9px] font-mono text-slate-400 uppercase w-fit">
             {product.sku}
           </span>
-          <span className="text-[8px] font-black text-blue-600 uppercase tracking-[0.3em] px-0.5 mt-0.5">
+          <span className="text-[8px] font-bold text-blue-600 uppercase tracking-[0.1em] px-0.5 mt-0.5">
             {product.category}
           </span>
         </div>
 
         {/* 2. RIGHT GROUP: DATA CLUSTER (QTY + Status) */}
         <div className="flex items-center gap-1.5 mt-0.5">
-          <span className="px-2 py-0.5 bg-slate-950 border border-slate-800 rounded-xl text-[8px] font-black text-slate-500 tracking-wider uppercase whitespace-nowrap">
+          <span className="px-2 py-0.5 bg-slate-950 border border-slate-800 rounded-xl text-[8px] font-bold text-slate-500 tracking-wider uppercase whitespace-nowrap">
             QTY: {product.quantityInStock}
           </span>
 
           <span
-            className={`px-2 py-0.5 rounded-xl text-[8px] font-black uppercase tracking-widest border whitespace-nowrap transition-all duration-500 ${
+            className={`px-2 py-0.5 rounded-xl text-[8px] font-bold uppercase tracking-widest border whitespace-nowrap transition-all duration-500 ${
               product.quantityInStock <= product.lowStockThreshold
                 ? "text-red-500 border-red-500/20 bg-red-500/5 animate-pulse"
                 : "text-emerald-500 border-emerald-500/20 bg-emerald-500/5"
@@ -95,7 +94,7 @@ export default function ProductCard({
                 <div className="flex-1 border-b border-dotted border-slate-800 mb-1 opacity-50" />
 
                 {/* 3. Value: High-contrast and aligned */}
-                <span className="text-[10px] font-black text-slate-300 tracking-tight whitespace-nowrap">
+                <span className="text-[10px] font-bold text-slate-500 tracking-wide whitespace-nowrap">
                   {value?.toString() || "N/A"}
                 </span>
               </div>
@@ -110,7 +109,7 @@ export default function ProductCard({
       {/* ADDITIONAL SPECS INDICATOR */}
       <div className="h-4 mb-4">
         {Object.entries(product.attributes || {}).length > 3 && (
-          <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">
+          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
             + Additional Specs Available
           </p>
         )}

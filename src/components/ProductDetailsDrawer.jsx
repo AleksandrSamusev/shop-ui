@@ -127,7 +127,7 @@ export default function ProductDetailsDrawer({ product, isOpen, onClose }) {
                   }`}
                 >
                   {product.quantityInStock}{" "}
-                  <span className="text-[10px] uppercase not-italic text-slate-600 ml-1">
+                  <span className="text-[10px] uppercase not-italic tracking-normal text-slate-600 ml-1">
                     Units
                   </span>
                 </p>
@@ -148,11 +148,11 @@ export default function ProductDetailsDrawer({ product, isOpen, onClose }) {
             <div className="bg-slate-950/40 rounded-[2.5rem] border border-slate-800/40 p-8 space-y-6">
               {Object.entries(product.attributes || {}).map(([key, value]) => (
                 <div key={key} className="flex items-end gap-3 group/spec">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest shrink-0">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest shrink-0">
                     {key}
                   </span>
                   <div className="flex-1 border-b border-dotted border-slate-800/60 mb-1.5 opacity-40 group-hover/spec:opacity-100 transition-opacity" />
-                  <span className="text-[12px] font-black text-slate-200 tracking-tight text-right">
+                  <span className="text-[12px] font-bold text-slate-400 tracking-tight text-right">
                     {value.toString()}
                   </span>
                 </div>

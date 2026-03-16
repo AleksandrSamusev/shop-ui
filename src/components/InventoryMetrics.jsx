@@ -6,7 +6,7 @@ export default function InventoryMetrics({ stats }) {
         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
           Total SKUs
         </p>
-        <p className="text-3xl font-black text-white italic tracking-tighter">{stats.totalSkus}</p>
+        <p className="text-3xl font-black text-white italic tracking-wide">{stats.totalSkus}</p>
       </div>
 
       <div className="bg-slate-900/40 border border-slate-800/60 p-5 rounded-3xl backdrop-blur-sm">

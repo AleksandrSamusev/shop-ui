@@ -40,12 +40,12 @@ export default function ProductFilterBar({ filters, onFilterChange, onReset }) {
 
   return (
     <div className="flex items-center gap-4 mb-10 p-4 bg-slate-900/40 border border-slate-800/60 rounded-3xl backdrop-blur-xl animate-in fade-in slide-in-from-top-4 duration-500">
-      {/* 1. CUSTOM CATEGORY SELECT (Limited Height) */}
+      {/* 1. CUSTOM CATEGORY SELECT */}
       <div className="flex-1 max-w-[260px] relative" ref={dropdownRef}>
         <button
           type="button"
           onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-          className="w-full h-[48px] bg-slate-950 border border-slate-800 rounded-2xl px-4 flex items-center justify-between text-[10px] font-black text-white uppercase tracking-widest hover:border-blue-500/50 transition-all outline-none"
+          className="w-full h-[48px] bg-slate-950 border border-slate-800 rounded-2xl px-4 flex items-center justify-between text-[10px] font-bold text-white uppercase tracking-wide hover:border-blue-500/50 transition-all outline-none"
         >
           <span className="truncate">{filters.category || "All Categories"}</span>
           <ChevronDown
@@ -55,14 +55,14 @@ export default function ProductFilterBar({ filters, onFilterChange, onReset }) {
 
         {/* 🚀 THE SCROLLABLE LIST: Limited to 300px with Custom Scrollbar */}
         {isCategoryOpen && (
-          <div className="absolute top-full mt-2 w-full bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="absolute top-full mt-2 w-full bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-[110] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-2">
               <button
                 onClick={() => {
                   onFilterChange("category", "");
                   setIsCategoryOpen(false);
                 }}
-                className="w-full px-4 py-3 text-left text-[9px] font-black text-slate-500 hover:bg-slate-800 hover:text-white rounded-xl transition-colors uppercase tracking-widest"
+                className="w-full px-4 py-3 text-left text-[10px] font-black text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-colors uppercase tracking-widest"
               >
                 All Categories
               </button>
@@ -74,7 +74,7 @@ export default function ProductFilterBar({ filters, onFilterChange, onReset }) {
                     onFilterChange("category", cat);
                     setIsCategoryOpen(false);
                   }}
-                  className={`w-full px-4 py-3 text-left text-[9px] font-black rounded-xl transition-colors uppercase tracking-widest flex items-center justify-between group ${
+                  className={`w-full px-4 py-3 text-left text-[10px] font-bold rounded-xl transition-colors uppercase tracking-widest flex items-center justify-between group ${
                     filters.category === cat
                       ? "bg-blue-600 text-white"
                       : "text-slate-400 hover:bg-slate-800 hover:text-white"
@@ -89,7 +89,7 @@ export default function ProductFilterBar({ filters, onFilterChange, onReset }) {
         )}
       </div>
 
-      {/* 2. PRICE RANGE: MIN (Synced with Forge h-48) */}
+      {/* 2. PRICE RANGE: MIN */}
       <div className="relative w-[130px]">
         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-700">
           $
@@ -99,7 +99,7 @@ export default function ProductFilterBar({ filters, onFilterChange, onReset }) {
           placeholder="MIN PRICE"
           value={filters.minPrice || ""}
           onChange={(e) => onFilterChange("minPrice", e.target.value)}
-          className="w-full h-[48px] bg-slate-950 border border-slate-800 rounded-2xl pl-8 pr-4 text-[10px] font-black text-white uppercase outline-none focus:border-blue-500 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-full h-[48px] bg-slate-950 border border-slate-800 rounded-2xl pl-8 pr-4 text-[10px] font-bold text-white uppercase tracking-wide outline-none focus:border-blue-500 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
       </div>
 
@@ -113,7 +113,7 @@ export default function ProductFilterBar({ filters, onFilterChange, onReset }) {
           placeholder="MAX PRICE"
           value={filters.maxPrice || ""}
           onChange={(e) => onFilterChange("maxPrice", e.target.value)}
-          className="w-full h-[48px] bg-slate-950 border border-slate-800 rounded-2xl pl-8 pr-4 text-[10px] font-black text-white uppercase outline-none focus:border-blue-500 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-full h-[48px] bg-slate-950 border border-slate-800 rounded-2xl pl-8 pr-4 text-[10px] font-bold text-white uppercase tracking-wide outline-none focus:border-blue-500 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
       </div>
 
@@ -122,7 +122,7 @@ export default function ProductFilterBar({ filters, onFilterChange, onReset }) {
         <select
           value={filters.sortBy || "id,desc"}
           onChange={(e) => onFilterChange("sortBy", e.target.value)}
-          className="w-full h-[48px] bg-slate-950 border border-slate-800 rounded-2xl px-4 text-[10px] font-black text-white uppercase tracking-widest outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
+          className="w-full h-[48px] bg-slate-950 border border-slate-800 rounded-2xl px-4 text-[10px] font-bold text-white uppercase tracking-widest outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
         >
           <option value="id,desc">Newest First</option>
           <option value="price,asc">Price: Low to High</option>
