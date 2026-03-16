@@ -42,29 +42,34 @@ export default function ProductCard({
         </div>
       </div>
 
-      {/* METADATA HEADER */}
-      <div className="flex justify-between items-start mb-2">
+      {/* 🚀 THE MASTERPIECE FINAL: Edge-to-Edge Alignment & Tight Vertical Flow */}
+      <div className="flex justify-between items-start mb-4 px-0">
+        {/* 1. LEFT COLUMN: IDENTITY (SKU + Category) */}
         <div className="flex flex-col gap-1">
-          {" "}
-          {/* Stacked SKU and Category */}
-          <span className="text-[9px] font-mono bg-slate-950 px-2 py-1 rounded-lg text-slate-500 border border-slate-800 uppercase w-fit">
+          <span className="px-2 py-0.5 bg-slate-950 border border-slate-800 rounded-lg text-[8px] font-mono text-slate-600 uppercase w-fit">
             {product.sku}
           </span>
-          {/* 🚀 THE CATEGORY BADGE: Provides context for the search match */}
-          <span className="text-[8px] font-black text-blue-500/80 uppercase tracking-widest px-1">
+          <span className="text-[8px] font-black text-blue-600 uppercase tracking-[0.3em] px-0.5 mt-0.5">
             {product.category}
           </span>
         </div>
 
-        <span
-          className={`text-[9px] font-black px-2 py-1 rounded-lg uppercase ${
-            product.status === "IN_STOCK"
-              ? "bg-emerald-500/10 text-emerald-400"
-              : "bg-red-500/10 text-red-400"
-          }`}
-        >
-          {product.status}
-        </span>
+        {/* 2. RIGHT GROUP: DATA CLUSTER (QTY + Status) */}
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <span className="px-2 py-0.5 bg-slate-950 border border-slate-800 rounded-xl text-[8px] font-black text-slate-500 tracking-wider uppercase whitespace-nowrap">
+            QTY: {product.quantityInStock}
+          </span>
+
+          <span
+            className={`px-2 py-0.5 rounded-xl text-[8px] font-black uppercase tracking-widest border whitespace-nowrap transition-all duration-500 ${
+              product.quantityInStock <= product.lowStockThreshold
+                ? "text-red-500 border-red-500/20 bg-red-500/5 animate-pulse"
+                : "text-emerald-500 border-emerald-500/20 bg-emerald-500/5"
+            }`}
+          >
+            {product.quantityInStock <= product.lowStockThreshold ? "CRITICAL" : "IN_STOCK"}
+          </span>
+        </div>
       </div>
 
       {/* PRODUCT TITLE */}

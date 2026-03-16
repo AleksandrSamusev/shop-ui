@@ -10,6 +10,7 @@ import GridEmptyState from "../components/GridEmptyState";
 import ProductSearchBar from "../components/ProductSearchBar";
 import SystemToast from "../components/SystemToast";
 import ProductDeleteConfirmationModal from "../components/ProductDeleteConfirmationModal";
+import ProductFilterBar from "../components/ProductFilterBar";
 
 export default function ProductsPage() {
   const [productsPage, setProductsPage] = useState({
@@ -24,6 +25,14 @@ export default function ProductsPage() {
     totalValue: 0,
     topSeller: "N/A",
   });
+
+  const [filters, setFilters] = useState({
+    category: "",
+    minPrice: "",
+    maxPrice: "",
+    sortBy: "id-desc",
+  });
+
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -64,18 +73,30 @@ export default function ProductsPage() {
     }
   };
 
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setCurrentPage(0); // 🚀 Always reset to page 1 on filter
+  };
+
+  const resetFilters = () => {
+    setFilters({ category: "", minPrice: "", maxPrice: "", sortBy: "id-desc" });
+    setSearchQuery(""); // Optional: clear search too
+    setCurrentPage(0);
+  };
+
   // 1. UPDATED: Fetch Products to use dynamic state
   const fetchProducts = async () => {
+    setLoading(true);
     try {
       const data = await productService.getAllProducts({
         search: searchQuery,
-        page: currentPage, // 🚀 Uses reactive state
+        page: currentPage,
         size: pageSize,
-        sort: "id,desc",
+        ...filters,
       });
       setProductsPage(data);
     } catch (err) {
-      console.error("[ProductsPage] Error fetching catalog:", err.message);
+      console.error("Fetch failed:", err.message);
     } finally {
       setLoading(false);
     }
@@ -90,12 +111,12 @@ export default function ProductsPage() {
     }
   };
 
-  // 2. UPDATED: Debounce Effect (Must include dependencies)
   useEffect(() => {
-    const timer = setTimeout(refreshDashboard, 400);
+    const timer = setTimeout(() => {
+      refreshDashboard();
+    }, 400);
     return () => clearTimeout(timer);
-    // 🚀 Refresh when ANY navigation or search state changes
-  }, [searchQuery, currentPage, pageSize]);
+  }, [searchQuery, currentPage, pageSize, filters]);
 
   // 3. FIXED: Search Input Handler (Forces reset to Page 1)
   const handleSearchChange = (e) => {
@@ -215,7 +236,7 @@ export default function ProductsPage() {
   return (
     <div className="flex flex-col h-full bg-slate-950 overflow-hidden">
       <header className="bg-slate-900/50 backdrop-blur-xl border-b border-slate-800 p-4 shrink-0">
-        <div className="flex items-center justify-between max-w-[1400px]">
+        <div className="flex items-center justify-between max-w-[1400px] ml-7">
           {/* PRODUCT SEARCH */}
           <ProductSearchBar
             value={searchQuery}
@@ -236,6 +257,22 @@ export default function ProductsPage() {
       <main className="flex-1 overflow-y-auto p-12 bg-slate-950">
         <div className="max-w-[1400px] space-y-10">
           <InventoryMetrics stats={stats} />
+
+          <div className="relative z-50">
+            <ProductFilterBar
+            filters={filters}
+            onFilterChange={(key, value) => {
+              setFilters((prev) => ({ ...prev, [key]: value }));
+              setCurrentPage(0); // Reset to first page on filter
+            }}
+            onReset={() => {
+              setFilters({ category: "", minPrice: "", maxPrice: "", sortBy: "id-desc" });
+              setSearchQuery("");
+              setCurrentPage(0);
+            }}
+          />
+          </div>
+          
 
           {/* CONDITIONAL RENDER: PRODUCTS GRID OR EMPTY STATE */}
           <div className="mt-10">
@@ -279,7 +316,7 @@ export default function ProductsPage() {
               setPageSize(Number(e.target.value));
               setCurrentPage(0);
             }}
-            handleClick={(pageIndex) => setCurrentPage(pageIndex)} 
+            handleClick={(pageIndex) => setCurrentPage(pageIndex)}
             handleDecreaseClick={() => setCurrentPage((prev) => prev - 1)}
             handleIncreaseClick={() => setCurrentPage((prev) => prev + 1)}
           />
