@@ -48,8 +48,7 @@ export default function ProductsPage() {
 
   const showSuccess = (message) => {
     setToast(message);
-    // Auto-expire after 4 seconds for a clean "Forge" feel
-    setTimeout(() => setToast(null), 4000);
+    setTimeout(() => setToast(null), 8000);
   };
 
   // 1. GLOBAL UI LISTENERS
@@ -75,16 +74,15 @@ export default function ProductsPage() {
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
-    setCurrentPage(0); // 🚀 Always reset to page 1 on filter
+    setCurrentPage(0);
   };
 
   const resetFilters = () => {
     setFilters({ category: "", minPrice: "", maxPrice: "", sortBy: "id-desc" });
-    setSearchQuery(""); // Optional: clear search too
+    setSearchQuery("");
     setCurrentPage(0);
   };
 
-  // 1. UPDATED: Fetch Products to use dynamic state
   const fetchProducts = async () => {
     setLoading(true);
     try {
@@ -102,7 +100,7 @@ export default function ProductsPage() {
     }
   };
 
-  // 3. THE REFRESH ENGINE
+  // 3. THE REFRESH ENGINE: Clean & Global
   const refreshDashboard = async () => {
     try {
       await Promise.all([fetchProducts(), loadStats()]);
@@ -112,10 +110,21 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
+    // 🚀 THE ADJUSTMENT: 800ms is "Human Typing Speed"
+    const debounceDelay = 800;
+
     const timer = setTimeout(() => {
-      refreshDashboard();
-    }, 400);
+      // 🚀 THE LOGIC GATE: Don't trigger if the search ends in a space (user is mid-sentence)
+      const isTypingSpace = searchQuery.endsWith(" ");
+
+      if (!isTypingSpace) {
+        refreshDashboard();
+      }
+    }, debounceDelay);
+
     return () => clearTimeout(timer);
+
+    // Keep all high-density dependencies
   }, [searchQuery, currentPage, pageSize, filters]);
 
   // 3. FIXED: Search Input Handler (Forces reset to Page 1)
@@ -260,19 +269,11 @@ export default function ProductsPage() {
 
           <div className="relative z-50">
             <ProductFilterBar
-            filters={filters}
-            onFilterChange={(key, value) => {
-              setFilters((prev) => ({ ...prev, [key]: value }));
-              setCurrentPage(0); // Reset to first page on filter
-            }}
-            onReset={() => {
-              setFilters({ category: "", minPrice: "", maxPrice: "", sortBy: "id-desc" });
-              setSearchQuery("");
-              setCurrentPage(0);
-            }}
-          />
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onReset={resetFilters}
+            />
           </div>
-          
 
           {/* CONDITIONAL RENDER: PRODUCTS GRID OR EMPTY STATE */}
           <div className="mt-10">
