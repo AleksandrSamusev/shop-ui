@@ -7,6 +7,7 @@ import ProductsPagination from "../components/ProductsPagination";
 import { productService } from "../services/productService";
 import { authService } from "../services/authService"; // 🚀 IMPORTED
 import AuthModal from "../components/AuthModal";
+import ProductDetailsDrawer from "../components/ProductDetailsDrawer";
 
 export default function HomePage() {
   const [productsPage, setProductsPage] = useState({ content: [], totalPages: 0 });
@@ -22,6 +23,8 @@ export default function HomePage() {
 
   const [loading, setLoading] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [viewingProduct, setViewingProduct] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   // 🚀 THE FIX: Initialize user state from localStorage
   const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
@@ -58,12 +61,13 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      {/* 🚀 PASSING USER STATE: Navbar now knows who is logged in */}
+      {/* 1. NAVIGATION: Identity-aware Navbar */}
       <Navbar currentUser={currentUser} onLoginClick={() => setIsAuthOpen(true)} />
 
       <HomeHero />
 
       <main className="max-w-[1400px] mx-auto px-12 py-16 space-y-12">
+        {/* 2. SYSTEM SEARCH: Filter bar with Z-index fix */}
         <div className="relative z-[100]">
           <ProductFilterBar
             filters={filters}
@@ -78,12 +82,20 @@ export default function HomePage() {
           />
         </div>
 
+        {/* 3. THE FLEET GRID: High-density product display */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {productsPage.content.map((product) => (
-            <ProductCard key={product.id} product={product} isAdmin={false} />
+            <ProductCard
+              key={product.id}
+              product={product}
+              isAdmin={false}
+              // 🚀 THE HANDSHAKE: Pass the setter as onViewSpecs for clarity
+              onViewSpecs={() => setSelectedProduct(product)}
+            />
           ))}
         </div>
 
+        {/* 4. DATA TELEMETRY: Showroom Pagination */}
         <ProductsPagination
           {...productsPage}
           currentPage={currentPage}
@@ -98,10 +110,18 @@ export default function HomePage() {
         />
       </main>
 
+      {/* 5. SECURITY TERMINAL: Authentication Modal */}
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
-        onLoginSuccess={handleLoginSuccess} // 🚀 TRIGGERING THE SYNC
+        onLoginSuccess={handleLoginSuccess}
+      />
+
+      {/* 🚀 6. TECHNICAL TERMINAL: Product Details Drawer */}
+      <ProductDetailsDrawer
+        product={selectedProduct}
+        isOpen={!!selectedProduct} // 🛡️ Converts object presence to true/false
+        onClose={() => setSelectedProduct(null)}
       />
     </div>
   );

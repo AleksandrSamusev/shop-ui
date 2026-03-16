@@ -100,7 +100,6 @@ export default function ProductsPage() {
     }
   };
 
-  // 3. THE REFRESH ENGINE: Clean & Global
   const refreshDashboard = async () => {
     try {
       await Promise.all([fetchProducts(), loadStats()]);
@@ -110,54 +109,15 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
-    // 🚀 THE ADJUSTMENT: 800ms is "Human Typing Speed"
     const debounceDelay = 800;
-
     const timer = setTimeout(() => {
-      // 🚀 THE LOGIC GATE: Don't trigger if the search ends in a space (user is mid-sentence)
       const isTypingSpace = searchQuery.endsWith(" ");
-
       if (!isTypingSpace) {
         refreshDashboard();
       }
     }, debounceDelay);
-
     return () => clearTimeout(timer);
-
-    // Keep all high-density dependencies
   }, [searchQuery, currentPage, pageSize, filters]);
-
-  // 3. FIXED: Search Input Handler (Forces reset to Page 1)
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-    setCurrentPage(0); // 🚀 THE FIX: Snap back to first page for new results
-  };
-
-  // 4. FIXED: Clear Search Handler
-  const handleClearSearch = () => {
-    setSearchQuery("");
-    setCurrentPage(0); // 🚀 THE FIX: Snap back to first page on clear
-  };
-
-  // 6. CRUD HANDLERS
-  const triggerDelete = (product) => {
-    setDeleteTarget({ id: product.id, name: product.name });
-  };
-
-  const confirmDelete = useCallback(async () => {
-    const currentProduct = productRef.current;
-    if (!currentProduct) {
-      return;
-    }
-    try {
-      await productService.deleteProduct(currentProduct.id);
-      await refreshDashboard();
-      showSuccess(`${currentProduct.name.toUpperCase()} PERMANENTLY REMOVED`);
-      setProductToDelete(null);
-    } catch (err) {
-      console.error("Destruction failed:", err);
-    }
-  }, [refreshDashboard]);
 
   const handleCreateProduct = async (formData) => {
     setIsSaving(true);
@@ -188,16 +148,50 @@ export default function ProductsPage() {
     }
   };
 
-  // Open Modal for Creating
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(0);
+  };
+
+  // 4. FIXED: Clear Search Handler
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    setCurrentPage(0);
+  };
+
+  const handleDelete = (productId) => {
+    // Find the product by ID in your local state to show the name in the alert
+    const target = productsPage.content.find(p => p.id === productId);
+    if (target) {
+      // 2. THE FIX: Use your existing setter 'setProductToDelete'
+      setProductToDelete({ id: target.id, name: target.name });
+      console.log("DECOMMISSION TARGET IDENTIFIED:", target.name);
+    }
+  };
+
+  const confirmDelete = useCallback(async () => {
+    const currentProduct = productRef.current;
+    if (!currentProduct) {
+      return;
+    }
+    try {
+      await productService.deleteProduct(currentProduct.id);
+      await refreshDashboard();
+      showSuccess(`${currentProduct.name.toUpperCase()} PERMANENTLY REMOVED`);
+      setProductToDelete(null);
+    } catch (err) {
+      console.error("Destruction failed:", err);
+    }
+  }, [refreshDashboard]);
+
   const handleAddClick = () => {
-    setProductToEdit(null); // Ensure it's clean for a new part
+    setProductToEdit(null);
     setIsAdding(true);
   };
 
-  // Open Modal for Updating
-  const handleEditClick = (product) => {
-    setProductToEdit(product);
-    setIsAdding(true);
+  const handleEdit = (product) => {
+    setProductToEdit(product); // Assuming this is your editing state
+    setIsAdding(true); // Reusing the Add modal for Edit (Standard pattern)
   };
 
   const handleUpdateProduct = async (formData) => {
@@ -255,8 +249,8 @@ export default function ProductsPage() {
 
           {/* ADD PRODUCT BUTTON */}
           <button
-            onClick={() => setIsAdding(true)}
-            className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide shadow-lg active:scale-95 transition-all"
+            onClick={handleAddClick} // 🚀 THE FIX: Now the function is "Used" and the state is safe
+            className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide shadow-lg active:scale-95 transition-all shadow-blue-900/40"
           >
             + Add Product
           </button>
@@ -283,17 +277,11 @@ export default function ProductsPage() {
                   <ProductCard
                     key={product.id}
                     product={product}
-                    onEdit={() => {
-                      handleEditClick(product);
-                      setOpenMenuId(null);
-                    }}
-                    onDelete={() => {
-                      setProductToDelete(product); // 🚀 Change from setDeleteTarget to this
-                      setOpenMenuId(null);
-                    }}
+                    isAdmin={true} // 🚀 THE FIX: This ignites the 'Three Dots' menu in the Forge
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
                     openMenuId={openMenuId}
                     setOpenMenuId={setOpenMenuId}
-                    setViewingProduct={() => setViewingProduct(product)}
                   />
                 ))}
               </div>
