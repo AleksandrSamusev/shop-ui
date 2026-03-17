@@ -1,26 +1,35 @@
+import React from "react";
+import { X, Shield } from "lucide-react";
+
 export default function ProductDetailsDrawer({ product, isOpen, onClose }) {
-  if (!isOpen || !product) return null;
+  if (!product) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex justify-end">
-      {/* 1. BACKDROP (Click to close) */}
+    <>
+      {/* 🚀 1. THE VORTEX OVERLAY: Blurs the showroom background */}
       <div
-        className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm animate-in fade-in duration-300"
         onClick={onClose}
+        className={`fixed inset-0 bg-slate-950/60 backdrop-blur-md transition-all duration-500 ${
+          isOpen ? "opacity-100 z-[450]" : "opacity-0 pointer-events-none -z-10"
+        }`}
       />
 
-      {/* 2. THE DRAWER PANEL */}
-      <div className="relative w-full max-w-lg bg-slate-900 border-l border-slate-800 shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col h-full">
+      {/* 🚀 2. THE DRAWER PANEL: Set to fixed + z-[500] to beat the Filter Bar */}
+      <aside
+        className={`fixed top-0 right-0 h-full w-full max-w-lg bg-slate-900 border-l border-slate-800 shadow-[0_0_50px_rgba(0,0,0,0.5)] transition-transform duration-500 ease-out flex flex-col z-[500] ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
         {/* HEADER: Classification & Status */}
-        <header className="p-8 border-b border-slate-800 flex justify-between items-start shrink-0">
-          <div className="space-y-2">
+        <header className="p-8 border-b border-slate-800 flex justify-between items-start shrink-0 bg-slate-900/50 backdrop-blur-xl">
+          <div className="space-y-2 pr-16">
             <div className="flex items-center gap-3">
               {/* SKU Tag */}
               <span className="text-[10px] font-mono text-blue-500 uppercase tracking-widest bg-blue-500/5 px-2 py-0.5 rounded border border-blue-500/20">
                 {product.sku}
               </span>
 
-              {/* 🚀 THE CATEGORY: High-context classification */}
+              {/* THE CATEGORY: High-context classification */}
               <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">
                 {product.category}
               </span>
@@ -42,26 +51,17 @@ export default function ProductDetailsDrawer({ product, isOpen, onClose }) {
             </h2>
           </div>
 
-          {/* Close Button */}
+          {/* Close Button: High-intent exit port */}
           <button
             onClick={onClose}
-            className="p-2 text-slate-500 hover:text-white transition-colors"
+            className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-500 hover:text-white hover:border-slate-700 transition-all active:scale-90"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <X className="w-6 h-6" />
           </button>
         </header>
 
         {/* SCROLLABLE CONTENT */}
         <div className="flex-1 overflow-y-auto p-8 pt-0 space-y-0 custom-scrollbar">
-          {/* 🚀 FIXED: pt-0 and space-y-0 allow us to precisely bridge the gap between image and data */}
-
           {/* IMAGE PREVIEW: Full-Bleed Hero shot */}
           <div className="relative h-64 -mx-8 -mt-8 bg-white overflow-hidden border-b border-slate-800 flex items-center justify-center shrink-0 group/preview">
             {product.imageUrl ? (
@@ -85,13 +85,11 @@ export default function ProductDetailsDrawer({ product, isOpen, onClose }) {
             </div>
           </div>
 
-          {/* 🚀 THE BRIDGE: This manual spacer controls the exact gap to the first section */}
           <div className="h-12" />
 
           {/* INVENTORY SECTION */}
           <section className="pt-2">
             <div className="flex items-center gap-4 mb-8">
-              {/* 🚀 FIXED: White text and increased tracking for high-end visibility */}
               <h3 className="text-[11px] font-black text-white uppercase tracking-[0.4em] whitespace-nowrap">
                 Inventory Status
               </h3>
@@ -104,8 +102,6 @@ export default function ProductDetailsDrawer({ product, isOpen, onClose }) {
                 <p className="text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest">
                   Unit Price
                 </p>
-
-                {/* 🚀 THE FIX: flex, items-baseline, and a specific leading-none */}
                 <div className="flex items-baseline gap-2 leading-none">
                   <span className="text-sm font-black text-blue-500 italic">$</span>
                   <p className="text-3xl font-black text-white italic tracking-tighter">
@@ -144,7 +140,6 @@ export default function ProductDetailsDrawer({ product, isOpen, onClose }) {
               <div className="h-[1px] w-full bg-blue-500/20" />
             </div>
 
-            {/* 🚀 THE FIX: Wrap the specs in a subtle container to match the boxes above */}
             <div className="bg-slate-950/40 rounded-[2.5rem] border border-slate-800/40 p-8 space-y-6">
               {Object.entries(product.attributes || {}).map(([key, value]) => (
                 <div key={key} className="flex items-end gap-3 group/spec">
@@ -160,7 +155,7 @@ export default function ProductDetailsDrawer({ product, isOpen, onClose }) {
             </div>
           </section>
         </div>
-      </div>
-    </div>
+      </aside>
+    </>
   );
 }
