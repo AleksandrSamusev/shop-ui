@@ -55,7 +55,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl shadow-blue-900/20">
+      <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl shadow-blue-900/20 animate-in zoom-in-95 duration-300">
         {/* HEADER: Clearance Level */}
         <div className="bg-slate-950 p-8 border-b border-slate-800 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -64,96 +64,104 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
               {isLogin ? "Terminal Login" : "Register Asset"}
             </h3>
           </div>
-          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
+          <button
+            onClick={onClose}
+            className="text-slate-500 hover:text-white transition-all active:rotate-90"
+          >
             <X size={20} />
           </button>
         </div>
 
         {/* FORM: Security Handshake */}
-        <form onSubmit={handleSubmit} className="p-8 space-y-6">
-          {!isLogin && (
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
-                Full Identity
+        <form onSubmit={handleSubmit} className="p-8">
+          {/* 🚀 1. THE INPUT CLUSTER: Tightened to space-y-4 for high-density feel */}
+          <div className="space-y-4">
+            {!isLogin && (
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] px-1">
+                  Full Identity
+                </label>
+                <div className="relative group">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4 group-focus-within:text-blue-500 transition-colors" />
+                  <input
+                    type="text"
+                    required
+                    className="w-full h-[52px] bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-4 text-sm font-bold text-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-800"
+                    placeholder="COMMANDER NAME"
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] px-1">
+                Comm-Link (Email)
               </label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4" />
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4 group-focus-within:text-blue-500 transition-colors" />
                 <input
-                  type="text"
+                  type="email"
                   required
-                  className="w-full h-[52px] bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-4 text-sm text-white focus:border-blue-500 outline-none transition-all"
-                  placeholder="COMMANDER NAME"
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  className="w-full h-[52px] bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-4 text-sm font-bold text-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-600"
+                  placeholder="NAME@VELOCE.AF"
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
             </div>
-          )}
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
-              Comm-Link (Email)
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4" />
-              <input
-                type="email"
-                required
-                className="w-full h-[52px] bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-4 text-sm text-white focus:border-blue-500 outline-none transition-all"
-                placeholder="NAME@VELOCE.AF"
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] px-1">
+                Access Cipher
+              </label>
+              <div className="relative group">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4 group-focus-within:text-blue-500 transition-colors" />
+                <input
+                  type="password"
+                  required
+                  className="w-full h-[52px] bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-4 text-sm font-bold text-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-600"
+                  placeholder="••••••••"
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
-              Access Cipher
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4" />
-              <input
-                type="password"
-                required
-                className="w-full h-[52px] bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-4 text-sm text-white focus:border-blue-500 outline-none transition-all"
-                placeholder="••••••••"
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
-            </div>
-          </div>
-
+          {/* ERROR HANDLER: Positioned between Cluster and Button */}
           {error && (
-            <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl animate-in shake duration-300">
-              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <p className="text-[10px] font-black text-red-500 uppercase tracking-widest leading-tight">
+            <div className="mt-4 flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl animate-in shake duration-300">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              <p className="text-[9px] font-black text-red-500 uppercase tracking-widest leading-tight">
                 {error}
               </p>
             </div>
           )}
 
-          <button
-            disabled={loading} // Prevent spamming the API
-            className={`w-full h-[56px] rounded-2xl flex items-center justify-center gap-3 text-xs font-black uppercase tracking-[0.2em] shadow-lg transition-all active:scale-95 ${
-              loading
-                ? "bg-slate-800 text-slate-500 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20"
-            }`}
-          >
-            {/* Show specific status during the handshake */}
-            {loading ? "Verifying Cipher..." : isLogin ? "Initiate Access" : "Create Credentials"}
-
-            {!loading && <ArrowRight size={16} />}
-          </button>
-
-          <p className="text-center text-[10px] font-bold text-slate-600 uppercase tracking-widest">
-            {isLogin ? "No Clearance?" : "Existing Personnel?"}
+          {/* 🚀 2. THE ACTION SECTOR: Increased margin-top for separation */}
+          <div className="mt-8 space-y-6">
             <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="ml-2 text-blue-500 hover:underline cursor-pointer"
+              disabled={loading}
+              className={`w-full h-[58px] rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-[0.25em] shadow-xl transition-all active:scale-95 ${
+                loading
+                  ? "bg-slate-800 text-slate-600 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/30"
+              }`}
             >
-              {isLogin ? "Request Access" : "Login Terminal"}
+              {loading ? "Verifying Cipher..." : isLogin ? "Initiate Access" : "Create Credentials"}
+              {!loading && <ArrowRight size={16} className="mt-px" />}
             </button>
-          </p>
+
+            <p className="text-center text-[9px] font-bold text-slate-600 uppercase tracking-[0.2em]">
+              {isLogin ? "No Clearance?" : "Existing Personnel?"}
+              <button
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+                className="ml-2 text-blue-500 hover:text-blue-400 hover:underline transition-colors cursor-pointer"
+              >
+                {isLogin ? "Request Access" : "Login Terminal"}
+              </button>
+            </p>
+          </div>
         </form>
       </div>
     </div>

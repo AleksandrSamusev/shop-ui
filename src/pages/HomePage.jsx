@@ -8,6 +8,7 @@ import { productService } from "../services/productService";
 import { authService } from "../services/authService"; // 🚀 IMPORTED
 import AuthModal from "../components/AuthModal";
 import ProductDetailsDrawer from "../components/ProductDetailsDrawer";
+import GridEmptyState from "../components/GridEmptyState";
 
 export default function HomePage() {
   const [productsPage, setProductsPage] = useState({ content: [], totalPages: 0 });
@@ -77,37 +78,64 @@ export default function HomePage() {
             }}
             onReset={() => {
               setFilters({ category: "", minPrice: "", maxPrice: "", sortBy: "id,desc" });
+              setSearchQuery("");
               setCurrentPage(0);
             }}
           />
         </div>
 
-        {/* 3. THE FLEET GRID: High-density product display */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {productsPage.content.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              isAdmin={false}
-              // 🚀 THE HANDSHAKE: Pass the setter as onViewSpecs for clarity
-              onViewSpecs={() => setSelectedProduct(product)}
-            />
-          ))}
-        </div>
+        {/* 🚀 3. THE FLEET GRID & EMPTY STATE SECTOR */}
+        <div className="min-h-[400px]">
+          {loading ? (
+            /* 📡 LOADING: Scanning Deep Space Database... */
+            <div className="flex flex-col items-center justify-center py-32 space-y-4">
+              <div className="w-10 h-10 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">
+                Accessing Telemetry...
+              </p>
+            </div>
+          ) : productsPage.content && productsPage.content.length > 0 ? (
+            <>
+              {/* ACTIVE GRID */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {productsPage.content.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    isAdmin={false}
+                    onViewSpecs={() => setSelectedProduct(product)}
+                  />
+                ))}
+              </div>
 
-        {/* 4. DATA TELEMETRY: Showroom Pagination */}
-        <ProductsPagination
-          {...productsPage}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          handleSelection={(e) => {
-            setPageSize(Number(e.target.value));
-            setCurrentPage(0);
-          }}
-          handleClick={(i) => setCurrentPage(i)}
-          handleDecreaseClick={() => setCurrentPage((p) => p - 1)}
-          handleIncreaseClick={() => setCurrentPage((p) => p + 1)}
-        />
+              {/* 🚀 4. DATA TELEMETRY: Only show if products exist */}
+              <div className="mt-12">
+                <ProductsPagination
+                  {...productsPage}
+                  currentPage={currentPage}
+                  pageSize={pageSize}
+                  handleSelection={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(0);
+                  }}
+                  handleClick={(i) => setCurrentPage(i)}
+                  handleDecreaseClick={() => setCurrentPage((p) => p - 1)}
+                  handleIncreaseClick={() => setCurrentPage((p) => p + 1)}
+                />
+              </div>
+            </>
+          ) : (
+            /* 🚀 🛡️ THE SYMMETRICAL EMPTY STATE: Reusing our Universal Component */
+            <GridEmptyState
+              isAdmin={false}
+              onAction={() => {
+                setFilters({ category: "", minPrice: "", maxPrice: "", sortBy: "id,desc" });
+                setSearchQuery("");
+                setCurrentPage(0);
+              }}
+            />
+          )}
+        </div>
       </main>
 
       {/* 5. SECURITY TERMINAL: Authentication Modal */}
@@ -117,10 +145,10 @@ export default function HomePage() {
         onLoginSuccess={handleLoginSuccess}
       />
 
-      {/* 🚀 6. TECHNICAL TERMINAL: Product Details Drawer */}
+      {/* 6. TECHNICAL TERMINAL: Product Details Drawer */}
       <ProductDetailsDrawer
         product={selectedProduct}
-        isOpen={!!selectedProduct} // 🛡️ Converts object presence to true/false
+        isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
       />
     </div>

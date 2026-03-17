@@ -161,7 +161,7 @@ export default function ProductsPage() {
 
   const handleDelete = (productId) => {
     // Find the product by ID in your local state to show the name in the alert
-    const target = productsPage.content.find(p => p.id === productId);
+    const target = productsPage.content.find((p) => p.id === productId);
     if (target) {
       // 2. THE FIX: Use your existing setter 'setProductToDelete'
       setProductToDelete({ id: target.id, name: target.name });
@@ -271,22 +271,28 @@ export default function ProductsPage() {
 
           {/* CONDITIONAL RENDER: PRODUCTS GRID OR EMPTY STATE */}
           <div className="mt-10">
+            {/* 🚀 THE GRID LOGIC: High-density fleet management */}
             {productsPage.content && productsPage.content.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {productsPage.content.map((product) => (
                   <ProductCard
                     key={product.id}
                     product={product}
-                    isAdmin={true} // 🚀 THE FIX: This ignites the 'Three Dots' menu in the Forge
+                    isAdmin={true} // 🛡️ Activates 'Three Dots' menu for the Admin
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     openMenuId={openMenuId}
                     setOpenMenuId={setOpenMenuId}
+                    onViewSpecs={() => setViewingProduct(product)}
                   />
                 ))}
               </div>
             ) : (
-              <GridEmptyState onClick={() => setIsAdding(true)} />
+              /* 🚀 THE SYMMETRICAL EMPTY STATE: Now using the Universal Component */
+              <GridEmptyState
+                isAdmin={true} // 🛡️ Tells the component to show "Create New Product"
+                onAction={handleAddClick} // 🛡️ Using your existing master 'Add' function
+              />
             )}
           </div>
 
@@ -330,8 +336,8 @@ export default function ProductsPage() {
         isSaving={isSaving}
       />
       <ProductDetailsDrawer
-        isOpen={!!viewingProduct}
         product={viewingProduct}
+        isOpen={!!viewingProduct}
         onClose={() => setViewingProduct(null)}
       />
 

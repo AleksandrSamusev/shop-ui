@@ -321,39 +321,45 @@ export default function AddProductModal({ isOpen, onClose, onSave, isSaving, pro
 
           {/* ROW 2: THE LOGISTICS (A balanced 4-column grid) */}
           <div className="grid grid-cols-4 gap-6 items-end">
-            {/* 1. SKU IDENTIFIER */}
-            <div className="space-y-2">
+            {/* 🚀 1. SKU IDENTIFIER: Symmetrical High-Density Input */}
+            <div className="space-y-2 relative">
+              {" "}
+              {/* 🛡️ Added relative to the parent for absolute positioning */}
               <div className="flex justify-between items-center px-1">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
                   SKU Identifier
-                  {/* 🚀 VISUAL CUE: Add a small lock icon or text for Edit Mode */}
-                  {product && <span className="ml-2 text-blue-500/50">[Locked]</span>}
+                  {product && <span className="ml-2 text-blue-500/50 italic">[Locked]</span>}
                 </label>
               </div>
-
               <div className="relative">
                 <input
                   type="text"
                   placeholder="VF-SP-001"
                   value={formData.sku}
-                  /* 🚀 THE UI LOCK: Prevents typing in Edit Mode */
                   readOnly={!!product}
                   onChange={(e) => {
-                    // Only allow changes if we are NOT in edit mode
                     if (!product) {
-                      setFormData({ ...formData, sku: e.target.value });
+                      setFormData({ ...formData, sku: e.target.value.toUpperCase() });
                       if (errors.sku) setErrors({ ...errors, sku: null });
                     }
                   }}
-                  /* 🚀 VISUAL LOCK: Add 'cursor-not-allowed' and 'opacity-60' for Edit Mode */
-                  className={`w-full h-[48px] bg-slate-950 border rounded-2xl px-4 text-sm text-white focus:border-blue-500 outline-none transition-all uppercase ${
-                    product ? "opacity-60 cursor-not-allowed border-slate-900" : "border-slate-800"
+                  className={`w-full h-[48px] bg-slate-950 border rounded-2xl px-4 text-sm font-bold text-white focus:border-blue-500 outline-none transition-all uppercase ${
+                    product
+                      ? "opacity-60 cursor-not-allowed border-slate-900 bg-slate-900/50"
+                      : "border-slate-800"
                   } ${
                     errors.sku
                       ? "border-red-500/50 bg-red-500/5 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
                       : ""
                   }`}
                 />
+
+                {/* 🚀 THE SYMMETRICAL SIGNAL: Using your standardized absolute format */}
+                {errors.sku && (
+                  <span className="absolute top-full left-0 w-full px-2 mt-1 text-[9px] font-bold text-red-500 uppercase animate-in fade-in slide-in-from-top-1 tracking-tighter leading-tight">
+                    {errors.sku}
+                  </span>
+                )}
               </div>
             </div>
 

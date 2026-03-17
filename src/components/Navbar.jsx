@@ -12,7 +12,7 @@ export default function Navbar({ onLoginClick, currentUser }) {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
+    <nav className="sticky top-0 z-[150] bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
       <div className="max-w-[1400px] mx-auto px-8 h-[80px] flex items-center justify-between">
         
         {/* BRAND: Veloce Aerospace */}
