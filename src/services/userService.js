@@ -10,10 +10,10 @@ export const userService = {
     return response.data.data;
   },
 
-  // Get user by id
   getUserById: async (id) => {
+    // 🚀 THE FIX: Return the unwrapped data directly
     const response = await api.get(`/users/${id}`);
-    return response.data.data;
+    return response.data.data; // This is the 'User' object
   },
 
   // Delete an address

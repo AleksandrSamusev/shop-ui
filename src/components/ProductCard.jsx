@@ -1,9 +1,13 @@
-import React from "react";
 import { useState } from "react";
-import { ShoppingBasket, MoreVertical, Settings } from "lucide-react";
+import { 
+  ShoppingBasket, 
+  MoreVertical, 
+  Settings, 
+  Plus 
+} from "lucide-react"; // 🚀 CONSOLIDATED: All icons in one line
 import { authService } from "../services/authService";
-import { useNavigate } from 'react-router-dom'; 
-
+import { useNavigate } from "react-router-dom";
+import { useBasket } from "../context/BasketContext";
 export default function ProductCard({
   product,
   isAdmin, // 🛡️ Added: To toggle Admin vs Customer UI
@@ -13,7 +17,16 @@ export default function ProductCard({
   openMenuId, // Existing Admin Forge prop
   setOpenMenuId, // Existing Admin Forge prop
 }) {
+  const { addToBasket } = useBasket();
   const navigate = useNavigate();
+
+  // 🛡️ THE HANDLER: Prevents event bubbling and executes the add command
+  const handleAddToBasket = (e) => {
+    e.stopPropagation(); // 🛑 STOP: Prevents the card from opening the "View Specs" drawer
+    addToBasket(product);
+    console.log(`SKU ${product.sku} added to the mission basket.`);
+  };
+
   return (
     <div
       key={product.id}
@@ -181,8 +194,8 @@ export default function ProductCard({
             /* 🛡️ ADMIN VIEWING SHOWROOM: Show "Manage" Portal */
             <button
               onClick={(e) => {
-                e.stopPropagation(); // 🛡️ Prevents opening the specs drawer
-                navigate("/admin/products"); // 🚀 THE VORTEX: Jump back to management
+                e.stopPropagation();
+                navigate("/admin/products");
               }}
               className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-800 bg-slate-900/40 text-slate-500 hover:text-blue-400 hover:border-blue-500/30 transition-all group"
               title="Jump to Admin Dashboard"
@@ -197,9 +210,8 @@ export default function ProductCard({
             /* 🛒 GUEST/CUSTOMER VIEWING SHOWROOM: Show "Add to Basket" */
             <button
               onClick={(e) => {
-                e.stopPropagation();
-                console.log(`Adding ${product.name} to Basket...`);
-                // addToBasket(product);
+                e.stopPropagation(); // 🛑 Stops the Specs Drawer from opening
+                addToBasket(product); // 🚀 THE FIX: Ignites the Context logic
               }}
               className="flex items-center gap-2 px-3 py-2 rounded-xl border border-blue-500/20 hover:border-blue-500 hover:bg-blue-600/10 transition-all active:scale-95 group"
             >
