@@ -11,11 +11,10 @@ export default function MainLayout() {
 
   const isActive = (path) => location.pathname.startsWith(path);
 
-  const handleLogout = () => {
-    authService.logout();
-    navigate("/");
-    window.location.reload();
-  };
+const handleLogout = () => {
+  authService.logout();
+  navigate("/");
+};
 
   return (
     <div className="flex h-screen w-full bg-slate-950 text-slate-100 font-sans overflow-hidden">

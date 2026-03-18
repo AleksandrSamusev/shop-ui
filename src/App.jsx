@@ -1,7 +1,9 @@
-// src/App.jsx
+import { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
 import { BasketProvider } from "./context/BasketContext";
-import { authService } from "./services/authService"; 
+import { authService } from "./services/authService";
+
 import MainLayout from "./layouts/MainLayout";
 import UsersPage from "./pages/UsersPage";
 import ProductsPage from "./pages/ProductsPage";
@@ -10,26 +12,43 @@ import CheckoutPage from "./pages/CheckoutPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
-  // 🛡️ IDENTITY RESOLUTION: Resolve the current user for the session
-  const currentUser = authService.getCurrentUser(); 
-  
-  // 🚀 THE KEY TRIGGER: When this changes (guest -> user_2), 
-  // the BasketProvider REBOOTS and reads the correct storage locker.
-  const basketIdentity = currentUser ? `basket_${currentUser.id}` : "basket_guest";
+  // ✅ 1. REACTIVE AUTH STATE (single source of truth)
+  const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
+
+  // ✅ 2. HANDLERS
+  const handleLoginSuccess = () => {
+    const user = authService.getCurrentUser();
+    setCurrentUser(user);
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setCurrentUser(null);
+  };
 
   return (
-    <BasketProvider key={currentUser?.id ? `user_${currentUser.id}` : "guest"}>
+    // ✅ 3. PASS USER INTO BASKET PROVIDER (critical fix)
+    <BasketProvider user={currentUser}>
       <BrowserRouter>
         <Routes>
-          {/* 1. THE PUBLIC SHOWROOM */}
-          <Route path="/" element={<HomePage />} />
+          {/* 1. PUBLIC */}
+          <Route
+            path="/"
+            element={
+              <HomePage
+                currentUser={currentUser}
+                onLoginSuccess={handleLoginSuccess}
+                onLogout={handleLogout}
+              />
+            }
+          />
 
-          {/* 2. THE SECURED CHECKOUT TERMINAL */}
+          {/* 2. USER / CHECKOUT */}
           <Route element={<ProtectedRoute allowedRoles={["ROLE_USER", "ROLE_ADMIN"]} />}>
             <Route path="/checkout" element={<CheckoutPage />} />
           </Route>
 
-          {/* 3. THE ADMIN FORGE SECTOR */}
+          {/* 3. ADMIN */}
           <Route element={<ProtectedRoute allowedRoles={["ROLE_ADMIN"]} />}>
             <Route path="/admin" element={<MainLayout />}>
               <Route index element={<Navigate to="/admin/products" replace />} />
@@ -38,7 +57,7 @@ function App() {
             </Route>
           </Route>
 
-          {/* 4. FALLBACK REDIRECT */}
+          {/* 4. FALLBACK */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

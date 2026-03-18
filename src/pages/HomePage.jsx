@@ -5,12 +5,13 @@ import ProductFilterBar from "../components/ProductFilterBar";
 import ProductCard from "../components/ProductCard";
 import ProductsPagination from "../components/ProductsPagination";
 import { productService } from "../services/productService";
-import { authService } from "../services/authService"; // 🚀 IMPORTED
 import AuthModal from "../components/AuthModal";
 import ProductDetailsDrawer from "../components/ProductDetailsDrawer";
 import GridEmptyState from "../components/GridEmptyState";
+import { useLocation } from "react-router-dom";
+import SystemToast from "../components/SystemToast";
 
-export default function HomePage() {
+export default function HomePage({ currentUser, onLoginSuccess, onLogout }) {
   const [productsPage, setProductsPage] = useState({ content: [], totalPages: 0 });
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(12);
@@ -26,14 +27,45 @@ export default function HomePage() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [viewingProduct, setViewingProduct] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const location = useLocation();
+  const [toast, setToast] = useState(null);
 
-  // 🚀 THE FIX: Initialize user state from localStorage
-  const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
+  useEffect(() => {
+    const storedToast = sessionStorage.getItem("orderSuccess");
 
-  // 🚀 THE SYNC: Function to update identity after login
+    if (storedToast) {
+      const parsed = JSON.parse(storedToast);
+
+      setToast(parsed);
+
+      // remove after reading
+      sessionStorage.removeItem("orderSuccess");
+    }
+  }, []);
+
+  useEffect(() => {
+    console.log("NAV STATE:", location.state);
+    if (location.state?.orderSuccess) {
+      setToast({
+        message: "Order placed successfully",
+        reference: location.state.reference,
+      });
+
+      // clear navigation state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
   const handleLoginSuccess = () => {
     setIsAuthOpen(false);
-    setCurrentUser(authService.getCurrentUser()); // Refresh state instantly
+    onLoginSuccess(); // delegate to App
   };
 
   const fetchProducts = async () => {
@@ -62,8 +94,11 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      {/* 1. NAVIGATION: Identity-aware Navbar */}
-      <Navbar currentUser={currentUser} onLoginClick={() => setIsAuthOpen(true)} />
+      <Navbar
+        currentUser={currentUser}
+        onLoginClick={() => setIsAuthOpen(true)}
+        onLogout={onLogout}
+      />
 
       <HomeHero />
 
@@ -151,6 +186,7 @@ export default function HomePage() {
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
       />
+      {toast && <SystemToast toast={toast} onClick={() => setToast(null)} />}
     </div>
   );
 }

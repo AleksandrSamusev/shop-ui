@@ -9,7 +9,6 @@ import { userService } from "../services/userService";
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { basket, basketTotal, clearBasket } = useBasket();
-
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,51 +18,41 @@ export default function CheckoutPage() {
     const resolveIdentity = async () => {
       const sessionUser = authService.getCurrentUser();
 
-      // 🛡️ 1. IDENTITY GUARD: Redirect if no session exists
-      if (!sessionUser) {
-        navigate("/");
-        return;
-      }
-
-      // 🛡️ 2. ID VALIDATION: Ensure a valid ID exists for the database query
-      if (!sessionUser.id) {
-        navigate("/");
-        return;
-      }
-
-      // 🛡️ 3. BASKET HYDRATION: Ensure basket isn't empty before proceeding
-      if (basket.length === 0 && !loading) {
+      if (!sessionUser || !sessionUser.id) {
         navigate("/");
         return;
       }
 
       try {
-        // 🚀 THE FIX: 'fullUser' is now assigned the direct return from your service
         const fullUser = await userService.getUserById(sessionUser.id);
 
         if (fullUser) {
           setCurrentUser(fullUser);
 
-          // 🛡️ AUTO-SELECT: Set coordinates from the database result
           const primary = fullUser.addresses?.find((a) => a.addressType === "PRIMARY");
+
           if (primary) {
             setSelectedAddressId(primary.id);
           } else if (fullUser.addresses?.length > 0) {
-            // Fallback: Select the first available index if no primary flag is set
             setSelectedAddressId(fullUser.addresses[0].id);
           }
         }
       } catch (error) {
         console.error("Identity Resolution Failed:", error);
-        if (!loading) navigate("/");
+        navigate("/");
       } finally {
         setLoading(false);
       }
     };
 
     resolveIdentity();
-    // 🛡️ Removing 'loading' from dependencies to prevent infinite re-resolution loops
-  }, [navigate, basket.length]);
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!loading && basket.length === 0) {
+      navigate("/");
+    }
+  }, [loading, basket.length, navigate]);
 
   const handlePlaceOrder = async () => {
     if (!selectedAddressId || isSubmitting) return;
@@ -78,26 +67,26 @@ export default function CheckoutPage() {
         })),
       };
 
-      // 1. TRANSMIT: Send payload to the backend forge
       const response = await OrderService.createOrder(orderData);
-      console.log("Order successfully committed to fleet logs:", response);
-
-      // 2. PURGE: Wipe the local basket and its TTL timestamp
-      // This ensures Sarah sees 0 items in her Navbar after the jump
+      console.log("ORDER RESPONSE:", response);
       clearBasket();
+      // ✅ Save before navigation
+      sessionStorage.setItem(
+        "orderSuccess",
+        JSON.stringify({
+          message: "Order placed successfully",
+          reference: response.data.referenceCode,
+        }),
+      );
 
-      // 3. NAVIGATE: Exit the checkout terminal
-      // In a real-world app, you might jump to a "/success" page or "My Orders"
-      navigate("/", { state: { orderSuccess: true, reference: response.data.referenceCode } });
+      navigate("/");
     } catch (error) {
       console.error("Transmission Error: Order could not be finalized.", error);
-      // Optional: Add a toast notification here for Sarah
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // 🛡️ LOADING TERMINAL: High-density resolver view
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4">

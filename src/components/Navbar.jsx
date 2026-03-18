@@ -5,22 +5,16 @@ import { useNavigate } from "react-router-dom";
 import { useBasket } from "../context/BasketContext";
 import BasketDrawer from "./BasketDrawer";
 
-export default function Navbar({ onLoginClick, currentUser }) {
+export default function Navbar({ onLoginClick, currentUser, onLogout }) {
   const navigate = useNavigate();
 
   // 🛡️ DATA RESOLUTION: Hooks must be called inside the component
   const { basketCount, clearBasket } = useBasket();
   const [isBasketOpen, setIsBasketOpen] = useState(false);
 
-const handleLogout = () => {
-  // 🛡️ ONLY terminate the identity (sessionStorage)
-  authService.logout(); 
 
-  // 🛑 REMOVE: clearBasket(); // DO NOT call this here!
-  
-  // 🔄 REFRESH: This will reboot the app with a clean AUTH state 
-  // but the BasketProvider will reload the items from LocalStorage.
-  window.location.reload(); 
+const handleLogout = () => {
+  onLogout();
 };
 
   return (
