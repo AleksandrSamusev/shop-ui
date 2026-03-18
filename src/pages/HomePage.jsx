@@ -2,14 +2,13 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import HomeHero from "../components/HomeHero";
 import ProductFilterBar from "../components/ProductFilterBar";
-import ProductCard from "../components/ProductCard";
 import ProductsPagination from "../components/ProductsPagination";
 import { productService } from "../services/productService";
 import AuthModal from "../components/AuthModal";
 import ProductDetailsDrawer from "../components/ProductDetailsDrawer";
-import GridEmptyState from "../components/GridEmptyState";
 import { useLocation } from "react-router-dom";
 import SystemToast from "../components/SystemToast";
+import ProductGrid from "../components/ProductGrid";
 
 export default function HomePage({ currentUser, onLoginSuccess, onLogout }) {
   const [productsPage, setProductsPage] = useState({ content: [], totalPages: 0 });
@@ -115,53 +114,42 @@ export default function HomePage({ currentUser, onLoginSuccess, onLogout }) {
         {/* 🚀 3. THE FLEET GRID & EMPTY STATE SECTOR */}
         <div className="min-h-[400px]">
           {loading ? (
-            /* 📡 LOADING: Scanning Deep Space Database... */
             <div className="flex flex-col items-center justify-center py-32 space-y-4">
               <div className="w-10 h-10 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">
                 Accessing Telemetry...
               </p>
             </div>
-          ) : productsPage.content && productsPage.content.length > 0 ? (
-            <>
-              {/* ACTIVE GRID */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {productsPage.content.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    isAdmin={false}
-                    onViewSpecs={() => setSelectedProduct(product)}
-                  />
-                ))}
-              </div>
-
-              {/* 🚀 4. DATA TELEMETRY: Only show if products exist */}
-              <div className="mt-12">
-                <ProductsPagination
-                  {...productsPage}
-                  currentPage={currentPage}
-                  pageSize={pageSize}
-                  handleSelection={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setCurrentPage(0);
-                  }}
-                  handleClick={(i) => setCurrentPage(i)}
-                  handleDecreaseClick={() => setCurrentPage((p) => p - 1)}
-                  handleIncreaseClick={() => setCurrentPage((p) => p + 1)}
-                />
-              </div>
-            </>
           ) : (
-            /* 🚀 🛡️ THE SYMMETRICAL EMPTY STATE: Reusing our Universal Component */
-            <GridEmptyState
-              isAdmin={false}
-              onAction={() => {
-                setFilters({ category: "", minPrice: "", maxPrice: "", sortBy: "id,desc" });
-                setSearchQuery("");
-                setCurrentPage(0);
-              }}
-            />
+            <>
+              <ProductGrid
+                products={productsPage.content}
+                isAdmin={false}
+                onViewSpecs={setSelectedProduct}
+                onEmptyAction={() => {
+                  setFilters({ category: "", minPrice: "", maxPrice: "", sortBy: "id,desc" });
+                  setSearchQuery("");
+                  setCurrentPage(0);
+                }}
+              />
+
+              {productsPage.content?.length > 0 && (
+                <div className="mt-12">
+                  <ProductsPagination
+                    {...productsPage}
+                    currentPage={currentPage}
+                    pageSize={pageSize}
+                    handleSelection={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setCurrentPage(0);
+                    }}
+                    handleClick={(i) => setCurrentPage(i)}
+                    handleDecreaseClick={() => setCurrentPage((p) => p - 1)}
+                    handleIncreaseClick={() => setCurrentPage((p) => p + 1)}
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>

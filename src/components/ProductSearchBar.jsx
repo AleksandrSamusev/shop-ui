@@ -1,6 +1,6 @@
-export default function ProductSearchBar({value, onChange, onClick}) {
+export default function ProductSearchBar({ value, onChange, onClick }) {
   return (
-    <div className="relative flex-1 max-w-md group">
+    <div className="relative w-full max-w-[420px] group">
       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-400 transition-colors">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -15,7 +15,7 @@ export default function ProductSearchBar({value, onChange, onClick}) {
       <input
         type="text"
         placeholder="Search by SKU, Name, or Category..."
-        className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-10 py-2 text-xs text-white focus:border-blue-500 outline-none transition-all"
+        className="w-full h-[48px] bg-slate-950 border border-slate-800 rounded-2xl pl-10 pr-10 text-[10px] font-bold text-white uppercase tracking-wide outline-none focus:border-blue-500 transition-all"
         value={value}
         onChange={onChange}
       />

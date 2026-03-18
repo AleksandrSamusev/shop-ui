@@ -11,6 +11,8 @@ import ProductSearchBar from "../components/ProductSearchBar";
 import SystemToast from "../components/SystemToast";
 import ProductDeleteConfirmationModal from "../components/ProductDeleteConfirmationModal";
 import ProductFilterBar from "../components/ProductFilterBar";
+import ProductGrid from "../components/ProductGrid";
+import PageContainer from "../components/layout/PageContainer";
 
 export default function ProductsPage() {
   const [productsPage, setProductsPage] = useState({
@@ -239,26 +241,24 @@ export default function ProductsPage() {
   return (
     <div className="flex flex-col h-full bg-slate-950 overflow-hidden">
       <header className="bg-slate-900/50 backdrop-blur-xl border-b border-slate-800 p-4 shrink-0">
-        <div className="flex items-center justify-between max-w-[1400px] ml-7">
-          {/* PRODUCT SEARCH */}
+        <div className="max-w-[1600px] mx-auto px-8 flex items-center justify-between">
           <ProductSearchBar
             value={searchQuery}
             onChange={handleSearchChange}
             onClick={handleClearSearch}
           />
 
-          {/* ADD PRODUCT BUTTON */}
           <button
-            onClick={handleAddClick} // 🚀 THE FIX: Now the function is "Used" and the state is safe
-            className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide shadow-lg active:scale-95 transition-all shadow-blue-900/40"
+            onClick={handleAddClick}
+            className="h-[48px] px-6 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-[10px] font-bold uppercase tracking-wide shadow-lg active:scale-95 transition-all shadow-blue-900/40 flex items-center justify-center"
           >
             + Add Product
           </button>
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-12 bg-slate-950">
-        <div className="max-w-[1800px] space-y-10">
+      <main className="flex-1 overflow-y-auto bg-slate-950">
+        <PageContainer>
           <InventoryMetrics stats={stats} />
 
           <div className="relative z-50">
@@ -269,34 +269,17 @@ export default function ProductsPage() {
             />
           </div>
 
-          {/* CONDITIONAL RENDER: PRODUCTS GRID OR EMPTY STATE */}
-          <div className="mt-10">
-            {/* 🚀 THE GRID LOGIC: High-density fleet management */}
-            {productsPage.content && productsPage.content.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {productsPage.content.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    isAdmin={true} // 🛡️ Activates 'Three Dots' menu for the Admin
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    openMenuId={openMenuId}
-                    setOpenMenuId={setOpenMenuId}
-                    onViewSpecs={() => setViewingProduct(product)}
-                  />
-                ))}
-              </div>
-            ) : (
-              /* 🚀 THE SYMMETRICAL EMPTY STATE: Now using the Universal Component */
-              <GridEmptyState
-                isAdmin={true} // 🛡️ Tells the component to show "Create New Product"
-                onAction={handleAddClick} // 🛡️ Using your existing master 'Add' function
-              />
-            )}
-          </div>
+          <ProductGrid
+            products={productsPage.content}
+            isAdmin={true}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            openMenuId={openMenuId}
+            setOpenMenuId={setOpenMenuId}
+            onViewSpecs={setViewingProduct}
+            onEmptyAction={handleAddClick}
+          />
 
-          {/* PAGINATION & DENSITY COMMAND BAR */}
           <ProductsPagination
             pageSize={pageSize}
             totalPages={productsPage.totalPages}
@@ -315,16 +298,10 @@ export default function ProductsPage() {
             handleDecreaseClick={() => setCurrentPage((prev) => prev - 1)}
             handleIncreaseClick={() => setCurrentPage((prev) => prev + 1)}
           />
-        </div>
+        </PageContainer>
       </main>
 
       {/* OVERLAYS */}
-      <DeleteModal
-        isOpen={!!productToDelete}
-        itemName={productToDelete?.name}
-        onCancel={() => setProductToDelete(null)}
-        onConfirm={confirmDelete}
-      />
       <AddProductModal
         isOpen={isAdding}
         product={productToEdit}

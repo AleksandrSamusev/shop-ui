@@ -1,15 +1,14 @@
 export default function InventoryMetrics({ stats }) {
-
   return (
-    <div className="grid grid-cols-4 gap-4">
-      <div className="bg-slate-900/40 border border-slate-800/60 p-5 rounded-3xl backdrop-blur-sm">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="bg-slate-900/40 border border-slate-800/60 p-6 rounded-3xl backdrop-blur-sm">
         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
           Total SKUs
         </p>
         <p className="text-3xl font-black text-white italic tracking-wide">{stats.totalSkus}</p>
       </div>
 
-      <div className="bg-slate-900/40 border border-slate-800/60 p-5 rounded-3xl backdrop-blur-sm">
+      <div className="bg-slate-900/40 border border-slate-800/60 p-6 rounded-3xl backdrop-blur-sm">
         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
           Stock Value
         </p>
@@ -19,9 +18,9 @@ export default function InventoryMetrics({ stats }) {
       </div>
 
       <div
-        className={`p-5 rounded-3xl border transition-all duration-700 shadow-2xl ${
+        className={`p-6 rounded-3xl border transition-all duration-500 ${
           stats.lowStockCount > 0
-            ? "bg-amber-500/10 border-amber-500/40 shadow-amber-900/20"
+            ? "bg-amber-500/10 border-amber-500/40"
             : "bg-slate-900/40 border-slate-800/60"
         }`}
       >
@@ -29,13 +28,15 @@ export default function InventoryMetrics({ stats }) {
           Low Stock
         </p>
         <p
-          className={`text-3xl font-black italic tracking-tighter ${stats.lowStockCount > 0 ? "text-amber-500 animate-pulse" : "text-white"}`}
+          className={`text-3xl font-black italic tracking-tighter ${
+            stats.lowStockCount > 0 ? "text-amber-400" : "text-white"
+          }`}
         >
           {stats.lowStockCount}
         </p>
       </div>
 
-      <div className="bg-slate-900/40 border border-slate-800/60 p-5 rounded-3xl backdrop-blur-sm">
+      <div className="bg-slate-900/40 border border-slate-800/60 p-6 rounded-3xl backdrop-blur-sm">
         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
           Top Item
         </p>
