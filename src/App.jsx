@@ -14,13 +14,17 @@ import OrdersPage from "./pages/OrdersPage";
 import AddressesPage from "./pages/AddressesPage";
 
 import ProtectedRoute from "./components/ProtectedRoute";
+import AppShell from "./layouts/AppShell";
+import AuthModal from "./components/AuthModal";
 
 function App() {
   const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const handleLoginSuccess = () => {
     const user = authService.getCurrentUser();
     setCurrentUser(user);
+    setIsAuthOpen(false); // 👈 close modal
   };
 
   const handleLogout = () => {
@@ -32,43 +36,47 @@ function App() {
     <BasketProvider user={currentUser}>
       <BrowserRouter>
         <Routes>
-          {/* 1. PUBLIC */}
+          {/* 🌍 GLOBAL LAYOUT */}
           <Route
-            path="/"
             element={
-              <HomePage
+              <AppShell
                 currentUser={currentUser}
-                onLoginSuccess={handleLoginSuccess}
+                onLoginClick={() => setIsAuthOpen(true)}
                 onLogout={handleLogout}
               />
             }
-          />
+          >
+            {/* 1. PUBLIC */}
+            <Route path="/" element={<HomePage />} />
 
-          {/* 2. USER / CHECKOUT */}
-          <Route element={<ProtectedRoute allowedRoles={["ROLE_USER", "ROLE_ADMIN"]} />}>
-            <Route path="/checkout" element={<CheckoutPage />} />
-          </Route>
+            {/* 2. USER */}
+            <Route element={<ProtectedRoute allowedRoles={["ROLE_USER", "ROLE_ADMIN"]} />}>
+              <Route path="/checkout" element={<CheckoutPage />} />
 
-          {/* 3. ACCOUNT (✅ USING ProtectedRoute NOW) */}
-          <Route element={<ProtectedRoute allowedRoles={["ROLE_USER", "ROLE_ADMIN"]} />}>
-            <Route path="/account" element={<AccountLayout />}>
-              <Route path="orders" element={<OrdersPage />} />
-              <Route path="addresses" element={<AddressesPage />} />
+              <Route path="/account" element={<AccountLayout />}>
+                <Route path="orders" element={<OrdersPage />} />
+                <Route path="addresses" element={<AddressesPage />} />
+              </Route>
             </Route>
-          </Route>
 
-          {/* 4. ADMIN */}
-          <Route element={<ProtectedRoute allowedRoles={["ROLE_ADMIN"]} />}>
-            <Route path="/admin" element={<MainLayout />}>
-              <Route index element={<Navigate to="/admin/products" replace />} />
-              <Route path="users" element={<UsersPage />} />
-              <Route path="products" element={<ProductsPage />} />
+            {/* 3. ADMIN */}
+            <Route element={<ProtectedRoute allowedRoles={["ROLE_ADMIN"]} />}>
+              <Route path="/admin" element={<MainLayout />}>
+                <Route index element={<Navigate to="/admin/products" replace />} />
+                <Route path="users" element={<UsersPage />} />
+                <Route path="products" element={<ProductsPage />} />
+              </Route>
             </Route>
-          </Route>
 
-          {/* 5. FALLBACK (always last) */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+            {/* 4. FALLBACK */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
         </Routes>
+        <AuthModal
+          isOpen={isAuthOpen}
+          onClose={() => setIsAuthOpen(false)}
+          onLoginSuccess={handleLoginSuccess}
+        />
       </BrowserRouter>
     </BasketProvider>
   );

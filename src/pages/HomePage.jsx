@@ -94,14 +94,7 @@ export default function HomePage({ currentUser, onLoginSuccess, onLogout }) {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <Navbar
-        currentUser={currentUser}
-        onLoginClick={() => setIsAuthOpen(true)}
-        onLogout={onLogout}
-      />
-
       <HomeHero />
-
       <main className="max-w-[1400px] mx-auto px-12 py-16 space-y-12">
         {/* 2. SYSTEM SEARCH: Filter bar with Z-index fix */}
         <div className="relative z-[100]">
