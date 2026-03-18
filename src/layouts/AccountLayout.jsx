@@ -10,7 +10,7 @@ export default function AccountLayout() {
         path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
 
     return (
-        <div className="flex w-full bg-slate-950 text-slate-100 font-sans">
+        <div className="flex min-h-screen w-full bg-slate-950 text-slate-100 font-sans">
 
             {/* --- SIDEBAR --- */}
             <aside className="w-64 bg-slate-950 border-r border-slate-900 flex flex-col shadow-2xl">
@@ -36,23 +36,27 @@ export default function AccountLayout() {
                 <nav className="p-4 space-y-2 flex-1">
                     <Link
                         to="/"
-                        className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive("/")
-                            ? "bg-blue-600 text-white"
-                            : "text-slate-500 hover:bg-slate-900 hover:text-white"
-                            }`}
+                        className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                            isActive("/")
+                                ? "bg-blue-600 text-white"
+                                : "text-slate-500 hover:bg-slate-900 hover:text-white"
+                        }`}
                     >
                         <Home size={16} />
-                        <span className="text-xs font-black uppercase tracking-[0.2em]">Home</span>
+                        <span className="text-xs font-black uppercase tracking-[0.2em]">
+                            Home
+                        </span>
                     </Link>
 
                     <div className="border-t border-slate-800 my-2" />
 
                     <Link
                         to="/account/orders"
-                        className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group ${isActive("/account/orders")
-                            ? "bg-blue-600 text-white shadow-lg shadow-blue-900/40"
-                            : "text-slate-500 hover:bg-slate-900 hover:text-slate-200"
-                            }`}
+                        className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 ${
+                            isActive("/account/orders")
+                                ? "bg-blue-600 text-white shadow-lg shadow-blue-900/40"
+                                : "text-slate-500 hover:bg-slate-900 hover:text-slate-200"
+                        }`}
                     >
                         <Package size={16} />
                         <span className="text-xs font-black uppercase tracking-[0.2em]">
@@ -62,10 +66,11 @@ export default function AccountLayout() {
 
                     <Link
                         to="/account/addresses"
-                        className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group ${isActive("/account/addresses")
-                            ? "bg-blue-600 text-white shadow-lg shadow-blue-900/40"
-                            : "text-slate-500 hover:bg-slate-900 hover:text-slate-200"
-                            }`}
+                        className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 ${
+                            isActive("/account/addresses")
+                                ? "bg-blue-600 text-white shadow-lg shadow-blue-900/40"
+                                : "text-slate-500 hover:bg-slate-900 hover:text-slate-200"
+                        }`}
                     >
                         <MapPin size={16} />
                         <span className="text-xs font-black uppercase tracking-[0.2em]">
@@ -76,7 +81,7 @@ export default function AccountLayout() {
             </aside>
 
             {/* --- MAIN CONTENT --- */}
-            <main className="flex-1 p-10">
+            <main className="flex-1 flex flex-col p-10">
                 <Outlet />
             </main>
         </div>

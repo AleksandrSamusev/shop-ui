@@ -240,8 +240,8 @@ export default function ProductsPage() {
 
   return (
     <div className="flex flex-col h-full bg-slate-950 overflow-hidden">
-      <header className="bg-slate-900/50 backdrop-blur-xl border-b border-slate-800 p-4 shrink-0">
-        <div className="max-w-[1600px] mx-auto px-8 flex items-center justify-between">
+      <header className="shrink-0">
+        <div className="max-w-[1600px] mx-auto px-8 py-4 flex items-center justify-between gap-4">
           <ProductSearchBar
             value={searchQuery}
             onChange={handleSearchChange}
