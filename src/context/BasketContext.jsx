@@ -11,6 +11,22 @@ export const BasketProvider = ({ children, user }) => {
   const [isHydrated, setIsHydrated] = useState(false);
   const prevKeyRef = useRef(null);
 
+  const removeFromBasket = (productId) => {
+    setBasket((prev) => prev.filter((item) => item.id !== productId));
+  };
+
+  const updateQuantity = (productId, delta) => {
+    setBasket((prev) =>
+      prev
+        .map((item) =>
+          item.id === productId
+            ? { ...item, quantity: item.quantity + delta }
+            : item
+        )
+        .filter((item) => item.quantity > 0) // remove if 0
+    );
+  };
+
   // 🛡️ 1. IDENTITY RESOLUTION: Determine the locker key
   const getActiveKey = useCallback(() => {
     return user?.id ? `${STORAGE_KEY_PREFIX}_user_${user.id}` : `${STORAGE_KEY_PREFIX}_guest`;
@@ -82,10 +98,24 @@ export const BasketProvider = ({ children, user }) => {
   const basketTotal = basket.reduce((total, item) => total + item.price * item.quantity, 0);
 
   return (
-    <BasketContext.Provider value={{ basket, addToBasket, clearBasket, basketCount, basketTotal }}>
+    <BasketContext.Provider value={{
+      basket,
+      addToBasket,
+      removeFromBasket,
+      updateQuantity,
+      clearBasket,
+      basketCount,
+      basketTotal,
+    }}>
       {children}
     </BasketContext.Provider>
   );
 };
 
-export const useBasket = () => useContext(BasketContext) || {};
+export const useBasket = () => {
+  const context = useContext(BasketContext);
+  if (!context) {
+    throw new Error("useBasket must be used within BasketProvider");
+  }
+  return context;
+};

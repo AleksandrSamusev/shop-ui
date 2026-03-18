@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { User as UserIcon, ShoppingBasket, Shield, LogOut, LayoutDashboard } from "lucide-react";
+import { User as UserIcon, ShoppingBasket, Shield, LogOut, LayoutDashboard, ChevronDown } from "lucide-react";
 import { authService } from "../services/authService";
 import { useNavigate } from "react-router-dom";
 import { useBasket } from "../context/BasketContext";
@@ -11,11 +11,26 @@ export default function Navbar({ onLoginClick, currentUser, onLogout }) {
   // 🛡️ DATA RESOLUTION: Hooks must be called inside the component
   const { basketCount, clearBasket } = useBasket();
   const [isBasketOpen, setIsBasketOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = React.useRef(null);
 
 
-const handleLogout = () => {
-  onLogout();
-};
+  const handleLogout = () => {
+    onLogout();
+  };
+
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const isAdmin = currentUser?.roles?.includes("ROLE_ADMIN");
 
   return (
     <>
@@ -36,16 +51,6 @@ const handleLogout = () => {
 
           {/* ACTIONS: Role-Based Intelligence */}
           <div className="flex items-center gap-8">
-            {/* 🛡️ ADMIN DASHBOARD: Only visible to ROLE_ADMIN */}
-            {currentUser?.roles?.includes("ROLE_ADMIN") && (
-              <button
-                onClick={() => navigate("/admin/products")}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/40 active:scale-95"
-              >
-                <LayoutDashboard size={14} />
-                Admin Dashboard
-              </button>
-            )}
 
             {/* 🛒 MY BASKET: Renamed and linked to open the drawer */}
             <button
@@ -66,23 +71,98 @@ const handleLogout = () => {
             </button>
 
             {currentUser ? (
-              <div className="flex items-center gap-4 pl-8 border-l border-slate-800/50 animate-in fade-in slide-in-from-right-4 duration-500">
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] font-black text-white uppercase tracking-widest">
-                    {currentUser.email.split("@")[0]}
-                  </span>
-                  <span className="text-[9px] font-bold text-blue-500 uppercase tracking-tighter">
-                    {currentUser.roles?.includes("ROLE_ADMIN") ? "Admin Clearance" : "Fleet Member"}
-                  </span>
-                </div>
-
+              <div
+                ref={menuRef}
+                className="relative flex items-center pl-8 border-l border-slate-800/50"
+              >
+                {/* TRIGGER */}
                 <button
-                  onClick={handleLogout}
-                  className="p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-slate-500 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/30 transition-all shadow-inner"
-                  title="Terminate Session"
+                  onClick={() => setIsMenuOpen((prev) => !prev)}
+                  className="flex items-center gap-2 group"
                 >
-                  <LogOut size={18} />
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest">
+                      {currentUser.email.split("@")[0]}
+                    </span>
+                    <span className="text-[9px] font-bold text-blue-500 uppercase tracking-tighter">
+                      {currentUser.roles?.includes("ROLE_ADMIN")
+                        ? "Admin Clearance"
+                        : "Fleet Member"}
+                    </span>
+                  </div>
+
+                  <ChevronDown
+                    size={14}
+                    className={`text-slate-500 transition-transform ${isMenuOpen ? "rotate-180 text-white" : ""
+                      }`}
+                  />
                 </button>
+
+                {/* DROPDOWN */}
+                {isMenuOpen && (
+                  <div className="absolute right-0 top-full mt-3 w-52 bg-slate-900 border border-slate-800 rounded-xl shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
+
+                    <div className="flex flex-col divide-y divide-slate-800">
+
+                      <button
+                        onClick={() => {
+                          navigate("/");
+                          setIsMenuOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-300 hover:bg-slate-800 hover:text-white"
+                      >
+                        Home
+                      </button>
+
+                      {isAdmin && (
+                        <button
+                          onClick={() => {
+                            navigate("/admin/products");
+                            setIsMenuOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-3 text-xs font-bold uppercase tracking-wide text-blue-400 hover:bg-slate-800"
+                        >
+                          Dashboard
+                        </button>
+                      )}
+
+                      {!isAdmin && (
+                        <>
+                          <button
+                            onClick={() => {
+                              navigate("/account/orders");
+                              setIsMenuOpen(false);
+                            }}
+                            className="w-full text-left px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-300 hover:bg-slate-800 hover:text-white"
+                          >
+                            My Orders
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              navigate("/account/addresses");
+                              setIsMenuOpen(false);
+                            }}
+                            className="w-full text-left px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-300 hover:bg-slate-800 hover:text-white"
+                          >
+                            Addresses
+                          </button>
+                        </>
+                      )}
+
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setIsMenuOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-3 text-xs font-bold uppercase tracking-wide text-red-400 hover:bg-slate-800"
+                      >
+                        Logout
+                      </button>
+
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <button
@@ -94,6 +174,9 @@ const handleLogout = () => {
               </button>
             )}
           </div>
+
+
+
         </div>
       </nav>
 
