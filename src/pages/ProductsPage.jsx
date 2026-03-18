@@ -258,7 +258,7 @@ export default function ProductsPage() {
       </header>
 
       <main className="flex-1 overflow-y-auto p-12 bg-slate-950">
-        <div className="max-w-[1400px] space-y-10">
+        <div className="max-w-[1800px] space-y-10">
           <InventoryMetrics stats={stats} />
 
           <div className="relative z-50">
@@ -273,7 +273,7 @@ export default function ProductsPage() {
           <div className="mt-10">
             {/* 🚀 THE GRID LOGIC: High-density fleet management */}
             {productsPage.content && productsPage.content.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {productsPage.content.map((product) => (
                   <ProductCard
                     key={product.id}
