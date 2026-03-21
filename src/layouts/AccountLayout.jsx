@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { Package, MapPin, User, Home } from "lucide-react";
-import { authService } from "../services/authService";
+import { authService } from "../features/auth/services/authService";
 
 export default function AccountLayout() {
     const location = useLocation();

@@ -1,5 +1,5 @@
 import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
-import { authService } from "../services/authService";
+import { authService } from "../features/auth/services/authService";
 import {
   LogOut,
   User as UserIcon,

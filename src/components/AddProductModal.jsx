@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CATEGORIES } from "../constants/categories";
+import { CATEGORIES } from "../shared/constants/categories";
 
 // GLOBAL CONFIGURATION (Moved outside to prevent re-renders)
 const FORGE_CONFIG = {
