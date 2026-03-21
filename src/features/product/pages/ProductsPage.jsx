@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { productService } from "../../product/services/productService";
 
-import AddProductModal from "../../../components/AddProductModal";
+import AddProductModal from "../components/modals/ProductAddModal";
 import ProductDetailsDrawer from "../components/ProductDetailsDrawer";
 import InventoryMetrics from "../../home/components/InventoryMetrics";
 import ProductsPagination from "../components/ProductsPagination";
 import ProductSearchBar from "../components/ProductSearchBar";
 import SystemToast from "../../../shared/components/ui/SystemToast";
-import ProductDeleteConfirmationModal from "../components/ProductDeleteConfirmationModal";
+import ProductDeleteConfirmationModal from "../components/modals/ProductDeleteConfirmationModal";
 import ProductFilterBar from "../components/ProductFilterBar";
 import ProductGrid from "../components/ProductGrid";
 import PageContainer from "../../../shared/components/layout/PageContainer";
