@@ -5,7 +5,7 @@ export default function HomeHero() {
       {/* 🚀 VISUAL DECORATION: The "Deep Void" Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none" />
 
-      <div className="max-w-[1400px] mx-auto px-8 relative z-10">
+      <div className="max-w-[1400px] mx-auto px-12 relative z-10">
         <p className="text-blue-500 text-[11px] font-black uppercase tracking-[0.4em] mb-4">
           Status: Operational // Deep Space Logistical Support
         </p>

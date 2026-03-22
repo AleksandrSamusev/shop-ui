@@ -31,7 +31,7 @@ export default function HomePage({ currentUser, onLoginSuccess, onLogout }) {
 
   const debouncedSearch = useDebounce(searchQuery, 700);
 
-  // ✅ NEW: unified data fetching
+  // data fetching
   const { productsPage, isInitialLoading, isFetching } = useProductsQuery({
     filters,
     search: debouncedSearch,
@@ -39,7 +39,7 @@ export default function HomePage({ currentUser, onLoginSuccess, onLogout }) {
     size: pageSize,
   });
 
-  // ✅ Keep toast from session storage
+  // Keep toast from session storage
   useEffect(() => {
     const storedToast = sessionStorage.getItem("orderSuccess");
 
@@ -50,7 +50,7 @@ export default function HomePage({ currentUser, onLoginSuccess, onLogout }) {
     }
   }, []);
 
-  // ✅ Keep toast from navigation
+  // Keep toast from navigation
   useEffect(() => {
     if (location.state?.orderSuccess) {
       setToast({
@@ -62,7 +62,7 @@ export default function HomePage({ currentUser, onLoginSuccess, onLogout }) {
     }
   }, [location.state]);
 
-  // ✅ Auto-hide toast
+  // Auto-hide toast
   useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => setToast(null), 4000);
@@ -75,7 +75,6 @@ export default function HomePage({ currentUser, onLoginSuccess, onLogout }) {
     onLoginSuccess();
   };
 
-  // ✅ Loading state (same UX as ProductsPage)
   if (isInitialLoading) {
     return (
       <div className="h-full w-full bg-slate-950 flex flex-col items-center justify-center space-y-4">

@@ -10,7 +10,6 @@ import SystemToast from "../../../shared/components/ui/SystemToast";
 import ProductDeleteConfirmationModal from "../components/modals/ProductDeleteConfirmationModal";
 import ProductFilterBar from "../components/ProductFilterBar";
 import ProductGrid from "../components/ProductGrid";
-import PageContainer from "../../../shared/components/layout/PageContainer";
 
 import { useProductFilters } from "../hooks/useProductFilters";
 import { useDebounce } from "../../../shared/hooks/useDebounce";
@@ -67,7 +66,6 @@ export default function ProductsPage() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  // ✅ NEW: mutations hook
   const { createProduct, updateProduct, deleteProduct } =
     useProductMutations({
       refetchProducts: refetch,
@@ -85,7 +83,6 @@ export default function ProductsPage() {
     handleSearchChange(e.target.value);
   };
 
-  // ✅ SIMPLIFIED
   const handleCreateProduct = async (formData) => {
     setIsSaving(true);
     try {
@@ -104,7 +101,6 @@ export default function ProductsPage() {
     }
   };
 
-  // ✅ SIMPLIFIED
   const confirmDelete = async () => {
     if (!productToDelete) return;
 
@@ -122,7 +118,6 @@ export default function ProductsPage() {
     setIsAdding(true);
   };
 
-  // ✅ SIMPLIFIED
   const handleUpdateProduct = async (formData) => {
     setIsSaving(true);
     try {
@@ -165,7 +160,7 @@ export default function ProductsPage() {
       </header>
 
       <main className="flex-1 overflow-y-auto bg-slate-950">
-        <PageContainer>
+        <div className="w-full max-w-[1600px] mx-auto px-8 pt-6 pb-10 space-y-6">
           <InventoryMetrics stats={stats} loading={statsLoading} />
 
           <div className="relative z-50">
@@ -176,10 +171,7 @@ export default function ProductsPage() {
             />
           </div>
 
-          <div
-            className={`relative ${isFetching ? "opacity-60" : ""
-              } transition-opacity`}
-          >
+          <div className={`relative ${isFetching ? "opacity-60" : ""} transition-opacity`}>
             {isFetching && (
               <div className="absolute top-2 right-4 text-[10px] text-slate-500 animate-pulse">
                 Updating...
@@ -217,7 +209,7 @@ export default function ProductsPage() {
               setCurrentPage((prev) => prev + 1)
             }
           />
-        </PageContainer>
+        </div>
       </main>
 
       {toast && (
