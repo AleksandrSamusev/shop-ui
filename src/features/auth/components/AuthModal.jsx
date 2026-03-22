@@ -2,6 +2,7 @@ import { X, Shield, Mail, Lock, User, ArrowRight, Phone } from "lucide-react";
 import { authService } from "../services/authService";
 import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
+import { showSuccess, showError } from "../../../shared/utils/toast";
 
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   const navigate = useNavigate();
@@ -17,22 +18,30 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   });
 
   const [errors, setErrors] = useState({});
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Reset on modal open
   useEffect(() => {
     if (isOpen) {
-      setFormData({
-        email: "",
-        password: "",
-        firstName: "",
-        lastName: "",
-        phoneNumber: "",
-      });
-      setErrors({});
-      setError("");
+      resetForm();
     }
   }, [isOpen]);
+
+  // ✅ Reset when switching mode (FIXES YOUR BUG)
+  useEffect(() => {
+    setErrors({});
+  }, [isLogin]);
+
+  const resetForm = () => {
+    setFormData({
+      email: "",
+      password: "",
+      firstName: "",
+      lastName: "",
+      phoneNumber: "",
+    });
+    setErrors({});
+  };
 
   if (!isOpen) return null;
 
@@ -49,6 +58,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
 
     if (!formData.email.trim()) {
       newErrors.email = "EMAIL REQUIRED";
+    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+      newErrors.email = "INVALID EMAIL FORMAT";
     }
 
     if (!formData.password || formData.password.length < 8) {
@@ -79,7 +90,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
     if (!validate()) return;
 
     setLoading(true);
-    setError("");
 
     try {
       if (isLogin) {
@@ -87,6 +97,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
           formData.email,
           formData.password
         );
+
+        showSuccess("ACCESS GRANTED");
 
         const userRoles = user?.roles || [];
 
@@ -106,12 +118,12 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
           phoneNumber: formData.phoneNumber,
         });
 
-        // switch to login after success
+        showSuccess("ACCOUNT CREATED");
+
         setIsLogin(true);
-        setError("ACCOUNT CREATED. PLEASE LOGIN.");
       }
     } catch (err) {
-      setError(
+      showError(
         err.response?.data?.message ||
         "SYSTEM ALERT: Terminal Connection Lost."
       );
@@ -139,11 +151,10 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8">
+        <form onSubmit={handleSubmit} noValidate className="p-8">
           <div className="space-y-4">
             {!isLogin && (
               <>
-                {/* FIRST NAME */}
                 <InputField
                   icon={User}
                   placeholder="FIRST NAME"
@@ -154,7 +165,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                   error={errors.firstName}
                 />
 
-                {/* LAST NAME */}
                 <InputField
                   icon={User}
                   placeholder="LAST NAME"
@@ -165,7 +175,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                   error={errors.lastName}
                 />
 
-                {/* PHONE */}
                 <InputField
                   icon={Phone}
                   placeholder="PHONE NUMBER"
@@ -178,17 +187,15 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
               </>
             )}
 
-            {/* EMAIL */}
             <InputField
               icon={Mail}
-              type="email"
+              type="text"
               placeholder="EMAIL"
               value={formData.email}
               onChange={(e) => updateField("email", e.target.value)}
               error={errors.email}
             />
 
-            {/* PASSWORD */}
             <InputField
               icon={Lock}
               type="password"
@@ -199,19 +206,12 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
             />
           </div>
 
-          {/* GLOBAL ERROR */}
-          {error && (
-            <div className="mt-4 text-red-500 text-xs font-bold text-center">
-              {error}
-            </div>
-          )}
-
           <div className="mt-8 space-y-6">
             <button
               disabled={loading}
               className={`w-full h-[58px] rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-[0.25em] ${loading
-                ? "bg-slate-800 text-slate-600"
-                : "bg-blue-600 hover:bg-blue-500 text-white"
+                  ? "bg-slate-800 text-slate-600"
+                  : "bg-blue-600 hover:bg-blue-500 text-white"
                 }`}
             >
               {loading
@@ -239,7 +239,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   );
 }
 
-/* 🔥 Reusable Input (matches your style but cleaner) */
+/* 🔥 Stable Input */
 function InputField({
   icon: Icon,
   type = "text",
@@ -256,18 +256,20 @@ function InputField({
           type={type}
           value={value}
           onChange={onChange}
-          className={`w-full h-[52px] bg-slate-950 border rounded-2xl pl-12 pr-4 text-sm font-bold text-white outline-none ${error
-            ? "border-red-500"
-            : "border-slate-800 focus:border-blue-500"
+          className={`w-full h-[52px] bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-4 text-sm font-bold text-white outline-none transition-all ${error
+              ? "ring-2 ring-red-500/80"
+              : "focus:ring-2 focus:ring-blue-500/60"
             }`}
           placeholder={placeholder}
         />
       </div>
-      {error && (
-        <p className="text-[10px] text-red-500 font-bold px-1">
-          {error}
-        </p>
-      )}
+
+      <p
+        className={`text-[10px] font-bold px-1 min-h-[14px] transition-all duration-200 ${error ? "text-red-500 opacity-100" : "opacity-0"
+          }`}
+      >
+        {error}
+      </p>
     </div>
   );
 }

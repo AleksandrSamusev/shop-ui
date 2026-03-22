@@ -3,9 +3,16 @@ export default function SystemToast({ toast, onClick }) {
   const isError = toast?.type === "error";
 
   return (
-    <div className="fixed top-8 right-8 z-[9999] animate-in fade-in slide-in-from-right-8 duration-500">
+    <div className="animate-in fade-in slide-in-from-right-8 duration-500">
       <div className="bg-slate-900/90 backdrop-blur-xl border border-blue-500/50 rounded-2xl p-4 shadow-2xl shadow-blue-900/20 flex items-center gap-4 min-w-[320px]">
-        <div className="w-1.5 h-8 bg-blue-500 rounded-full animate-pulse" />
+        <div
+          className={`w-1.5 h-8 rounded-full animate-pulse ${isSuccess
+              ? "bg-green-500"
+              : isError
+                ? "bg-red-500"
+                : "bg-blue-500"
+            }`}
+        />
 
         <div className="flex-1">
           <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none">

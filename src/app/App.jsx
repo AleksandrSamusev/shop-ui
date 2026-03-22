@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+
 import { BasketProvider } from "../features/basket/context/BasketContext";
 import { authService } from "../features/auth/services/authService";
 
 import MainLayout from "../layouts/MainLayout";
 import AccountLayout from "../layouts/AccountLayout";
 
-import UsersPage from "../features/user/pages/UsersPage"
+import UsersPage from "../features/user/pages/UsersPage";
 import ProductsPage from "../features/product/pages/ProductsPage";
 import HomePage from "../features/home/pages/HomePage";
 import CheckoutPage from "../features/checkout/pages/CheckoutPage";
@@ -24,7 +26,7 @@ function App() {
   const handleLoginSuccess = () => {
     const user = authService.getCurrentUser();
     setCurrentUser(user);
-    setIsAuthOpen(false); // 👈 close modal
+    setIsAuthOpen(false);
   };
 
   const handleLogout = () => {
@@ -35,6 +37,25 @@ function App() {
   return (
     <BasketProvider user={currentUser}>
       <BrowserRouter>
+        {/* 🌐 GLOBAL TOAST SYSTEM */}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: "#0f172a", // slate-900
+              color: "#ffffff",
+              border: "1px solid #1e293b",
+              borderRadius: "16px",
+              fontSize: "11px",
+              fontWeight: "bold",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              padding: "12px 16px",
+            },
+          }}
+        />
+
         <Routes>
           {/* 🌍 GLOBAL LAYOUT */}
           <Route
@@ -50,7 +71,13 @@ function App() {
             <Route path="/" element={<HomePage />} />
 
             {/* 2. USER */}
-            <Route element={<ProtectedRoute allowedRoles={["ROLE_USER", "ROLE_ADMIN"]} />}>
+            <Route
+              element={
+                <ProtectedRoute
+                  allowedRoles={["ROLE_USER", "ROLE_ADMIN"]}
+                />
+              }
+            >
               <Route path="/checkout" element={<CheckoutPage />} />
 
               <Route path="/account" element={<AccountLayout />}>
@@ -60,9 +87,14 @@ function App() {
             </Route>
 
             {/* 3. ADMIN */}
-            <Route element={<ProtectedRoute allowedRoles={["ROLE_ADMIN"]} />}>
+            <Route
+              element={<ProtectedRoute allowedRoles={["ROLE_ADMIN"]} />}
+            >
               <Route path="/admin" element={<MainLayout />}>
-                <Route index element={<Navigate to="/admin/products" replace />} />
+                <Route
+                  index
+                  element={<Navigate to="/admin/products" replace />}
+                />
                 <Route path="users" element={<UsersPage />} />
                 <Route path="products" element={<ProductsPage />} />
               </Route>
@@ -72,6 +104,8 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
+
+        {/* 🔐 AUTH MODAL */}
         <AuthModal
           isOpen={isAuthOpen}
           onClose={() => setIsAuthOpen(false)}
