@@ -1,12 +1,13 @@
-import React, { useState } from "react";
-import { X, Shield, Mail, Lock, User, ArrowRight } from "lucide-react";
+import { X, Shield, Mail, Lock, User, ArrowRight, Phone } from "lucide-react";
 import { authService } from "../services/authService";
-import { useNavigate } from "react-router-dom"; // 🚀 1. IMPORT THE DISPATCHER
+import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
-  // --- HOOKS MUST BE AT THE TOP ---
-  const navigate = useNavigate(); // 🚀 2. INITIALIZE NAVIGATE
+  const navigate = useNavigate();
+
   const [isLogin, setIsLogin] = useState(true);
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -14,49 +15,115 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
     lastName: "",
     phoneNumber: "",
   });
+
+  const [errors, setErrors] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Move the conditional return AFTER the hooks
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        email: "",
+        password: "",
+        firstName: "",
+        lastName: "",
+        phoneNumber: "",
+      });
+      setErrors({});
+      setError("");
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  const updateField = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: null }));
+    }
+  };
+
+  const validate = () => {
+    const newErrors = {};
+
+    if (!formData.email.trim()) {
+      newErrors.email = "EMAIL REQUIRED";
+    }
+
+    if (!formData.password || formData.password.length < 8) {
+      newErrors.password = "MIN 8 CHARACTERS REQUIRED";
+    }
+
+    if (!isLogin) {
+      if (!formData.firstName || formData.firstName.length < 2) {
+        newErrors.firstName = "FIRST NAME TOO SHORT";
+      }
+
+      if (!formData.lastName || formData.lastName.length < 2) {
+        newErrors.lastName = "LAST NAME TOO SHORT";
+      }
+
+      if (!formData.phoneNumber.trim()) {
+        newErrors.phoneNumber = "PHONE REQUIRED";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("1. ENGINE IGNITED - Form Data:", formData);
+
+    if (!validate()) return;
 
     setLoading(true);
     setError("");
 
     try {
-      console.log("2. ATTEMPTING HANDSHAKE...");
-      const user = await authService.login(formData.email, formData.password);
-      console.log("3. DATA RECEIVED:", user);
+      if (isLogin) {
+        const user = await authService.login(
+          formData.email,
+          formData.password
+        );
 
-      // 🛡️ Safe check for roles array
-      const userRoles = user?.roles || [];
+        const userRoles = user?.roles || [];
 
-      if (userRoles.includes("ROLE_ADMIN")) {
-        console.log("4. CLEARANCE GRANTED: Redirecting to Admin Forge");
-        navigate("/admin/products");
+        if (userRoles.includes("ROLE_ADMIN")) {
+          navigate("/admin/products");
+        } else {
+          navigate("/");
+        }
+
+        onLoginSuccess();
       } else {
-        console.log("4. CLEARANCE GRANTED: Staying in Showroom");
-        navigate("/");
-      }
+        await authService.register({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+          phoneNumber: formData.phoneNumber,
+        });
 
-      onLoginSuccess();
+        // switch to login after success
+        setIsLogin(true);
+        setError("ACCOUNT CREATED. PLEASE LOGIN.");
+      }
     } catch (err) {
-      console.error("5. HANDSHAKE FAILED:", err);
-      // Pull the message from our custom ResponseUtil structure
-      setError(err.response?.data?.message || "SYSTEM ALERT: Terminal Connection Lost.");
+      setError(
+        err.response?.data?.message ||
+        "SYSTEM ALERT: Terminal Connection Lost."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl shadow-blue-900/20 animate-in zoom-in-95 duration-300">
-        {/* HEADER: Clearance Level */}
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+      <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl shadow-blue-900/20">
+        {/* HEADER */}
         <div className="bg-slate-950 p-8 border-b border-slate-800 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Shield className="text-blue-500 w-6 h-6" />
@@ -66,89 +133,93 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
           </div>
           <button
             onClick={onClose}
-            className="text-slate-500 hover:text-white transition-all active:rotate-90"
+            className="text-slate-500 hover:text-white"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* FORM: Security Handshake */}
         <form onSubmit={handleSubmit} className="p-8">
-          {/* 🚀 1. THE INPUT CLUSTER: Tightened to space-y-4 for high-density feel */}
           <div className="space-y-4">
             {!isLogin && (
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] px-1">
-                  Full Identity
-                </label>
-                <div className="relative group">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4 group-focus-within:text-blue-500 transition-colors" />
-                  <input
-                    type="text"
-                    required
-                    className="w-full h-[52px] bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-4 text-sm font-bold text-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-800"
-                    placeholder="COMMANDER NAME"
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  />
-                </div>
-              </div>
+              <>
+                {/* FIRST NAME */}
+                <InputField
+                  icon={User}
+                  placeholder="FIRST NAME"
+                  value={formData.firstName}
+                  onChange={(e) =>
+                    updateField("firstName", e.target.value)
+                  }
+                  error={errors.firstName}
+                />
+
+                {/* LAST NAME */}
+                <InputField
+                  icon={User}
+                  placeholder="LAST NAME"
+                  value={formData.lastName}
+                  onChange={(e) =>
+                    updateField("lastName", e.target.value)
+                  }
+                  error={errors.lastName}
+                />
+
+                {/* PHONE */}
+                <InputField
+                  icon={Phone}
+                  placeholder="PHONE NUMBER"
+                  value={formData.phoneNumber}
+                  onChange={(e) =>
+                    updateField("phoneNumber", e.target.value)
+                  }
+                  error={errors.phoneNumber}
+                />
+              </>
             )}
 
-            <div className="space-y-1.5">
-              <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] px-1">
-                Comm-Link (Email)
-              </label>
-              <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4 group-focus-within:text-blue-500 transition-colors" />
-                <input
-                  type="email"
-                  required
-                  className="w-full h-[52px] bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-4 text-sm font-bold text-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-600"
-                  placeholder="NAME@VELOCE.AF"
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-              </div>
-            </div>
+            {/* EMAIL */}
+            <InputField
+              icon={Mail}
+              type="email"
+              placeholder="EMAIL"
+              value={formData.email}
+              onChange={(e) => updateField("email", e.target.value)}
+              error={errors.email}
+            />
 
-            <div className="space-y-1.5">
-              <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] px-1">
-                Access Cipher
-              </label>
-              <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4 group-focus-within:text-blue-500 transition-colors" />
-                <input
-                  type="password"
-                  required
-                  className="w-full h-[52px] bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-4 text-sm font-bold text-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-600"
-                  placeholder="••••••••"
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                />
-              </div>
-            </div>
+            {/* PASSWORD */}
+            <InputField
+              icon={Lock}
+              type="password"
+              placeholder="PASSWORD"
+              value={formData.password}
+              onChange={(e) => updateField("password", e.target.value)}
+              error={errors.password}
+            />
           </div>
 
-          {/* ERROR HANDLER: Positioned between Cluster and Button */}
+          {/* GLOBAL ERROR */}
           {error && (
-            <div className="mt-4 flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl animate-in shake duration-300">
-              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-              <p className="text-[9px] font-black text-red-500 uppercase tracking-widest leading-tight">
-                {error}
-              </p>
+            <div className="mt-4 text-red-500 text-xs font-bold text-center">
+              {error}
             </div>
           )}
 
-          {/* 🚀 2. THE ACTION SECTOR: Increased margin-top for separation */}
           <div className="mt-8 space-y-6">
             <button
               disabled={loading}
-              className={`w-full h-[58px] rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-[0.25em] shadow-xl transition-all active:scale-95 ${
-                loading
-                  ? "bg-slate-800 text-slate-600 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/30"
-              }`}
+              className={`w-full h-[58px] rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-[0.25em] ${loading
+                ? "bg-slate-800 text-slate-600"
+                : "bg-blue-600 hover:bg-blue-500 text-white"
+                }`}
             >
-              {loading ? "Verifying Cipher..." : isLogin ? "Initiate Access" : "Create Credentials"}
-              {!loading && <ArrowRight size={16} className="mt-px" />}
+              {loading
+                ? "Processing..."
+                : isLogin
+                  ? "Initiate Access"
+                  : "Create Credentials"}
+              {!loading && <ArrowRight size={16} />}
             </button>
 
             <p className="text-center text-[9px] font-bold text-slate-600 uppercase tracking-[0.2em]">
@@ -156,14 +227,47 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
-                className="ml-2 text-blue-500 hover:text-blue-400 hover:underline transition-colors cursor-pointer"
+                className="ml-2 text-blue-500 hover:underline"
               >
-                {isLogin ? "Request Access" : "Login Terminal"}
+                {isLogin ? "Request Access" : "Login"}
               </button>
             </p>
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+/* 🔥 Reusable Input (matches your style but cleaner) */
+function InputField({
+  icon: Icon,
+  type = "text",
+  placeholder,
+  value,
+  onChange,
+  error,
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="relative group">
+        <Icon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4 group-focus-within:text-blue-500" />
+        <input
+          type={type}
+          value={value}
+          onChange={onChange}
+          className={`w-full h-[52px] bg-slate-950 border rounded-2xl pl-12 pr-4 text-sm font-bold text-white outline-none ${error
+            ? "border-red-500"
+            : "border-slate-800 focus:border-blue-500"
+            }`}
+          placeholder={placeholder}
+        />
+      </div>
+      {error && (
+        <p className="text-[10px] text-red-500 font-bold px-1">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
